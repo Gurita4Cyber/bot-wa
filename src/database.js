@@ -108,36 +108,46 @@ class JsonDB {
 	}
 	
 	read = async () => {
-		let data;
-		const isExist = await this._fileExists(this.file);
-		if (isExist) {
-			try {
+		let data = this.data;
+		try {
+			const isExist = await this._fileExists(this.file);
+			if (isExist) {
 				const rawData = await fs.promises.readFile(this.file, 'utf-8');
-				data = JSON.parse(rawData);
-			} catch(e) {
-				console.warn(`⚠️ Warning: Failed to parse database file ${path.basename(this.file)}: ${e.message}. Attempting to restore from backup...`);
+				if (rawData.trim()) {
+					data = JSON.parse(rawData);
+				} else {
+					throw new Error('File is empty');
+				}
+			} else {
+				await fs.promises.mkdir(path.dirname(this.file), { recursive: true });
+				await fs.promises.writeFile(this.file, JSON.stringify(this.data, null, 2));
+			}
+		} catch (e) {
+			console.warn(`⚠️ Warning: Failed to parse database file ${path.basename(this.file)}: ${e.message}. Attempting to restore from backup...`);
+			try {
 				const isBakExist = await this._fileExists(this.file + '.bak');
 				if (isBakExist) {
-					try {
-						const rawBakData = await fs.promises.readFile(this.file + '.bak', 'utf-8');
+					const rawBakData = await fs.promises.readFile(this.file + '.bak', 'utf-8');
+					if (rawBakData.trim()) {
 						data = JSON.parse(rawBakData);
 						await fs.promises.writeFile(this.file, JSON.stringify(data, null, 2));
 						console.log(`✅ Successfully restored database from backup: ${path.basename(this.file)}.bak`);
-					} catch (bakError) {
-						console.error(`❌ Error: Backup database file is also corrupted or empty: ${bakError.message}. Initializing empty database.`);
-						data = this.data;
-						await fs.promises.writeFile(this.file, JSON.stringify(this.data, null, 2));
+					} else {
+						throw new Error('Backup file is empty');
 					}
 				} else {
-					console.warn(`⚠️ No backup file found. Initializing empty database.`);
-					data = this.data;
+					throw new Error('No backup file found');
+				}
+			} catch (bakError) {
+				console.error(`❌ Error: Backup database file is also corrupted or empty: ${bakError.message}. Initializing empty database.`);
+				data = this.data;
+				try {
+					await fs.promises.mkdir(path.dirname(this.file), { recursive: true });
 					await fs.promises.writeFile(this.file, JSON.stringify(this.data, null, 2));
+				} catch (err) {
+					console.error(`❌ Failed to write empty database: ${err.message}`);
 				}
 			}
-		} else {
-			data = this.data;
-			await fs.promises.mkdir(path.dirname(this.file), { recursive: true });
-			await fs.promises.writeFile(this.file, JSON.stringify(this.data, null, 2));
 		}
 		return data;
 	}
@@ -157,17 +167,24 @@ class JsonDB {
 			}
 			const isFileExist = await this._fileExists(this.file);
 			if (isFileExist) {
-				await fs.promises.copyFile(this.file, this.file + '.bak');
-			}
-			if (Object.keys(this.data).length > 0) {
-				const safeData = JSON.stringify(this.data, (key, value) => {
-					if (typeof value === 'bigint') {
-						return value.toString();
+				try {
+					const stats = await fs.promises.stat(this.file);
+					if (stats.size > 0) {
+						await fs.promises.copyFile(this.file, this.file + '.bak');
 					}
-					return value;
-				}, 2);
-				await fs.promises.writeFile(this.file, safeData);
+				} catch (err) {
+					console.error('⚠️ Failed to create backup: ', err);
+				}
 			}
+			const tempFile = this.file + '.tmp';
+			const safeData = JSON.stringify(this.data, (key, value) => {
+				if (typeof value === 'bigint') {
+					return value.toString();
+				}
+				return value;
+			}, 2);
+			await fs.promises.writeFile(tempFile, safeData);
+			await fs.promises.rename(tempFile, this.file);
 		} catch (e) {
 			console.error('❌ Write Database failed: ', e);
 		} finally {
