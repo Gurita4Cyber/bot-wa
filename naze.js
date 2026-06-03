@@ -2990,6 +2990,27 @@ Select Bot Settings:
 				}
 			}
 			break
+			case 'qwenai': case 'qwen': {
+				if (!text) return m.reply(`Example: ${prefix + command} Siapakah penciptamu?`);
+				m.reply(global.mess.wait || 'Tunggu sebentar...');
+				try {
+					const response = await axios.post(`${global.qwen.openAiCompatible}/chat/completions`, {
+						model: 'qwen-plus',
+						messages: [{ role: 'user', content: text }]
+					}, {
+						headers: {
+							'Authorization': `Bearer ${global.qwen.apikey}`,
+							'Content-Type': 'application/json'
+						}
+					});
+					const result = response.data.choices[0].message.content;
+					await m.reply(result);
+				} catch (e) {
+					console.error(e);
+					m.reply('Gagal mengambil respon dari Qwen AI. Silakan coba lagi nanti.');
+				}
+			}
+			break
 			case 'deepseek': case 'r1': {
 				if (global.APIKeys[global.APIs.neosantara] === 'API_KEY_NEOSANTARA_AI') return m.reply('Silahkan Ganti Apikey Neosantara Ai!\nDi file settings.js. Example: .setapikey neo key_nya');
 				if (!text) return m.reply('Halo! Ada yang bisa dibantu hari ini?');
@@ -4482,6 +4503,7 @@ Select Bot Settings:
 │${setv} ${prefix}claude (query)
 │${setv} ${prefix}archipelago (query)
 │${setv} ${prefix}deepseek (query)
+│${setv} ${prefix}qwenai (query)
 │${setv} ${prefix}txt2img (query)
 ╰─┬────❍
 ╭─┴❍「 *ANIME* 」❍
@@ -4779,6 +4801,7 @@ Select Bot Settings:
 │${setv} ${prefix}claude (query)
 │${setv} ${prefix}archipelago (query)
 │${setv} ${prefix}deepseek (query)
+│${setv} ${prefix}qwenai (query)
 │${setv} ${prefix}txt2img (query)
 ╰──────❍`)
 			}

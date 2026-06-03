@@ -83,6 +83,13 @@ global.APIKeys = {
 	'https://api.neosantara.xyz/v1': 'API_KEY_NEOSANTARA_AI',
 }
 
+global.qwen = {
+	apikey: "sk-ws-H.HYILXX.bDQW.MEUCIFZbou1SZ5YHzrqQA85CNoWmuTkx_iD1VQxfm5m7aTbhAiEAjFR_PUb8fZcOHiDbVl1R5Fe_DyPa3gn2mUeu1pRZdEE",
+	apiHost: "ws-7xgy1zs71ib3tsvo.ap-southeast-1.maas.aliyuncs.com",
+	openAiCompatible: "https://ws-7xgy1zs71ib3tsvo.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
+	dashScope: "https://ws-7xgy1zs71ib3tsvo.ap-southeast-1.maas.aliyuncs.com/api/v1"
+}
+
 // Lainnya
 global.jadwalSholat = {
 	Subuh: '04:30',
