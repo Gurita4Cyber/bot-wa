@@ -2991,20 +2991,80 @@ Select Bot Settings:
 			}
 			break
 			case 'qwenai': case 'qwen': {
-				if (!text) return m.reply(`Example: ${prefix + command} Siapakah penciptamu?`);
+				let isImg = /image/.test(mime) || /image/.test(quoted.type);
+				if (!text && !isImg) return m.reply(`Example:\n- Tanya Jawab: ${prefix + command} Siapa presiden Indonesia?\n- Buat Gambar: ${prefix + command} gambar kucing lucu\n- Edit Gambar: Kirim/Balas gambar dengan caption ${prefix + command} buat ada sayapnya`);
+
+				let isDrawRequest = isImg || /^(gambar|buatkan gambar|buat gambar|draw|paint|generate image|create image|lukis|lukiskan)\b/i.test(text);
+
 				m.reply(global.mess.wait || 'Tunggu sebentar...');
+
 				try {
-					const response = await axios.post(`${global.qwen.openAiCompatible}/chat/completions`, {
-						model: 'qwen-plus',
-						messages: [{ role: 'user', content: text }]
-					}, {
-						headers: {
-							'Authorization': `Bearer ${global.qwen.apikey}`,
-							'Content-Type': 'application/json'
+					if (isDrawRequest) {
+						let content = [];
+						if (isImg) {
+							let media = await quoted.download();
+							let base64Image = `data:${mime || 'image/png'};base64,${media.toString('base64')}`;
+							content.push({ image: base64Image });
 						}
-					});
-					const result = response.data.choices[0].message.content;
-					await m.reply(result);
+						
+						let cleanText = text;
+						if (!isImg) {
+							cleanText = text.replace(/^(gambar|buatkan gambar|buat gambar|draw|paint|generate image|create image|lukis|lukiskan)\s*/i, '');
+						}
+						content.push({ text: cleanText || "improve this image" });
+
+						const response = await axios.post(`${global.qwen.dashScope}/services/aigc/multimodal-generation/generation`, {
+							model: 'qwen-image-2.0-pro',
+							input: {
+								messages: [
+									{
+										role: 'user',
+										content: content
+									}
+								]
+							},
+							parameters: {
+								negative_prompt: "low resolution, low quality, distorted limbs, malformed fingers",
+								prompt_extend: true,
+								watermark: false,
+								size: isImg ? undefined : "1024*1024"
+							}
+						}, {
+							headers: {
+								'Authorization': `Bearer ${global.qwen.apikey}`,
+								'Content-Type': 'application/json'
+							}
+						});
+
+						if (response.data && response.data.output && response.data.output.choices) {
+							let choices = response.data.output.choices[0];
+							if (choices.message && choices.message.content) {
+								let imgUrl = choices.message.content.find(c => c.image)?.image || choices.message.content[0]?.image;
+								if (imgUrl) {
+									await naze.sendMessage(m.chat, { image: { url: imgUrl }, caption: 'Selesai! ✨' }, { quoted: m });
+								} else {
+									m.reply('Gagal mendapatkan gambar dari respon Qwen AI.');
+								}
+							} else {
+								m.reply('Format respon Qwen AI tidak sesuai.');
+							}
+						} else {
+							m.reply('Gagal memproses gambar. Respon kosong.');
+						}
+					} else {
+						// Chat Completions
+						const response = await axios.post(`${global.qwen.openAiCompatible}/chat/completions`, {
+							model: 'qwen-plus',
+							messages: [{ role: 'user', content: text }]
+						}, {
+							headers: {
+								'Authorization': `Bearer ${global.qwen.apikey}`,
+								'Content-Type': 'application/json'
+							}
+						});
+						const result = response.data.choices[0].message.content;
+						await m.reply(result);
+					}
 				} catch (e) {
 					console.error(e);
 					m.reply('Gagal mengambil respon dari Qwen AI. Silakan coba lagi nanti.');
