@@ -10,13 +10,13 @@
   ],
   "author": "Nazedev",
   "license": "MIT",
-  "homepage": "https://github.com/nazedev/hitori#readme",
+  "homepage": "https://github.com/Gurita4Cyber#readme",
   "bugs": {
-    "url": "https://github.com/nazedev/hitori/issues"
+    "url": "https://github.com/Gurita4Cyber/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/nazedev/hitori.git"
+    "url": "git+https://github.com/Gurita4Cyber.git"
   },
   "type": "module",
   "main": "start.js",

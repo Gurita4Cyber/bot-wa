@@ -1522,7 +1522,7 @@ const naze = async (naze, m, msg, store) => {
 			}
 			break
 			case 'sc': case 'script': {
-				await m.reply(`https://github.com/nazedev/hitori\n⬆️ Itu Sc nya cuy`, {
+				await m.reply(`https://github.com/Gurita4Cyber\n⬆️ Itu Sc nya cuy`, {
 					title: author,
 					body: 'Subscribe My YouTube',
 					thumbnail: global.fake.thumbnail,
@@ -2935,7 +2935,7 @@ Select Bot Settings:
 			break
 			case 'tinyurl': case 'shorturl': case 'shortlink': {
 				if (!isLimit) return m.reply(global.mess.limit)
-				if (!text || !isUrl(text)) return m.reply(`Example: ${prefix + command} https://github.com/nazedev/hitori`)
+				if (!text || !isUrl(text)) return m.reply(`Example: ${prefix + command} https://github.com/Gurita4Cyber`)
 				let hasil = await fetchApi('/other/tinyurl', { url: text });
 				m.reply('Url : ' + hasil.result)
 				setLimit(m, db)
@@ -2943,7 +2943,7 @@ Select Bot Settings:
 			break
 			case 'git': case 'gitclone': {
 				if (!isLimit) return m.reply(global.mess.limit)
-				if (!args[0]) return m.reply(`Example: ${prefix + command} https://github.com/nazedev/hitori`)
+				if (!args[0]) return m.reply(`Example: ${prefix + command} https://github.com/Gurita4Cyber`)
 				if (!isUrl(args[0]) && !args[0].includes('github.com')) return m.reply('Gunakan Url Github!')
 				let [, user, repo] = args[0].match(/(?:https|git)(?::\/\/|@)github\.com[\/:]([^\/:]+)\/(.+)/i) || []
 				try {
@@ -4596,13 +4596,13 @@ Select Bot Settings:
 					title: ucapanWaktu,
 					description: packname,
 					thumbnailUrl: profile,
-					sourceUrl: my.gh,
+					sourceUrl: global.my.ch_link || global.my.ch || global.my.gh,
 					mentions: [m.sender, '0@s.whatsapp.net', ownerNumber[0] + '@s.whatsapp.net'],
 					contextInfo: {
 						forwardingScore: 1,
 						isForwarded: true,
 						forwardedNewsletterMessageInfo: {
-							newsletterJid: my.ch,
+							newsletterJid: global.my.ch,
 							serverMessageId: null,
 							newsletterName: 'Join For More Info'
 						}

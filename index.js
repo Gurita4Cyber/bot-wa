@@ -307,9 +307,22 @@ async function startNazeBot() {
 		if (connection == 'open') {
 			console.log('Connected to : ' + JSON.stringify(naze.user, null, 2));
 			let botNumber = await naze.decodeJid(naze.user.id);
+			if (global.my.ch && global.my.ch.startsWith('https://whatsapp.com/channel/')) {
+				try {
+					let code = global.my.ch.split('channel/')[1];
+					let res = await naze.newsletterMsg(code);
+					if (res && res.id) {
+						global.my.ch_link = global.my.ch;
+						global.my.ch = res.id;
+						console.log(chalk.green(`[SYSTEM] Resolved newsletter JID for ${code}: ${res.id}`));
+					}
+				} catch (e) {
+					console.log(chalk.red(`[SYSTEM] Failed to resolve newsletter JID: ${e.message}`));
+				}
+			}
 			if (global.db?.set[botNumber] && !global.db?.set[botNumber]?.join) {
-				if (my.ch.length > 0 && my.ch.includes('@newsletter')) {
-					if (my.ch) await naze.newsletterMsg(my.ch, { type: 'follow' }).catch(e => {})
+				if (global.my.ch.length > 0 && global.my.ch.includes('@newsletter')) {
+					await naze.newsletterMsg(global.my.ch, { type: 'follow' }).catch(e => {})
 					db.set[botNumber].join = true
 				}
 			}
