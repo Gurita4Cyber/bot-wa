@@ -3067,7 +3067,16 @@ Select Bot Settings:
 					}
 				} catch (e) {
 					console.error(e);
-					m.reply('Gagal mengambil respon dari Qwen AI. Silakan coba lagi nanti.');
+					let errorMsg = '❌ *Gagal mengambil respon dari Qwen AI*\n\n';
+					if (e.response) {
+						errorMsg += `*Status:* ${e.response.status} ${e.response.statusText || ''}\n`;
+						if (e.response.data) {
+							errorMsg += `*Detail Error:* \n\`\`\`json\n${JSON.stringify(e.response.data, null, 2)}\n\`\`\``;
+						}
+					} else {
+						errorMsg += `*Pesan Error:* ${e.message}`;
+					}
+					m.reply(errorMsg);
 				}
 			}
 			break
