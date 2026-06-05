@@ -1118,7 +1118,15 @@ async function Serialize(naze, msg, store) {
 				message: m.quoted,
 				...(m.isGroup ? { participant: m.quoted.sender } : {})
 			});
-			m.quoted.download = () => naze.downloadMediaMessage(m.quoted)
+			m.quoted.download = async () => {
+				let msg = await global.loadMessage(m.chat, m.quoted.id);
+				if (msg) {
+					const msgType = getContentType(msg.message) || Object.keys(msg.message)[0];
+					const realMsg = msg.message[msgType];
+					return naze.downloadMediaMessage({ msg: realMsg, type: msgType });
+				}
+				return naze.downloadMediaMessage(m.quoted);
+			}
 			m.quoted.delete = () => {
 				naze.sendMessage(m.quoted.chat, {
 					delete: {

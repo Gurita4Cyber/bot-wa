@@ -65,6 +65,7 @@ const naze = async (naze, m, msg, store) => {
 	const cases = global.db.cases;
 
 	await LoadDataBase(naze, m);
+	if (!db.customMenus) db.customMenus = {};
 	
 	const botNumber = naze.decodeJid(naze.user.id);
 	
@@ -1027,6 +1028,80 @@ const naze = async (naze, m, msg, store) => {
 					});
 				}
 				m.reply(global.mess.done)
+			}
+			break
+			case 'addmenu': {
+				if (!isCreator) return m.reply(global.mess.owner)
+				if (!text) return m.reply(`*Format Salah!*\n\nContoh: ${prefix + command} DOWNLOADER`)
+				let category = text.trim().toUpperCase()
+				if (!db.customMenus) db.customMenus = {}
+				if (db.customMenus[category]) return m.reply(`Kategori *${category}* sudah ada!`)
+				db.customMenus[category] = []
+				m.reply(`Berhasil menambahkan menu utama (kategori) *${category}*!\n\nGunakan perintah berikut untuk menambahkan submenu:\n*${prefix}addsubmenu ${category} | nama_command | deskripsi*`)
+			}
+			break
+			case 'delmenu': {
+				if (!isCreator) return m.reply(global.mess.owner)
+				if (!text) return m.reply(`*Format Salah!*\n\nContoh: ${prefix + command} DOWNLOADER`)
+				let category = text.trim().toUpperCase()
+				if (!db.customMenus || !db.customMenus[category]) return m.reply(`Kategori *${category}* tidak ditemukan!`)
+				delete db.customMenus[category]
+				m.reply(`Berhasil menghapus menu utama (kategori) *${category}*!`)
+			}
+			break
+			case 'addsubmenu': case 'addsub': {
+				if (!isCreator) return m.reply(global.mess.owner)
+				if (!text) return m.reply(`*Format Salah!*\n\nContoh: ${prefix + command} OWNER | setbio | ganti bio bot`)
+				let [category, cmdName, desc] = text.split('|').map(x => x.trim())
+				if (!category || !cmdName) return m.reply(`*Format Salah!*\n\nContoh: ${prefix + command} OWNER | setbio | ganti bio bot`)
+				
+				let matchedCat = Object.keys(db.customMenus || {}).find(k => k.toLowerCase() === category.toLowerCase())
+				if (!matchedCat) {
+					if (!db.customMenus) db.customMenus = {}
+					db.customMenus[category.toUpperCase()] = []
+					matchedCat = category.toUpperCase()
+				}
+				
+				db.customMenus[matchedCat].push({
+					command: cmdName.toLowerCase(),
+					description: desc ? `(${desc})` : ''
+				})
+				m.reply(`Berhasil menambahkan submenu *${prefix + cmdName.toLowerCase()}* ke dalam kategori *${matchedCat}*!`)
+			}
+			break
+			case 'delsubmenu': case 'delsub': {
+				if (!isCreator) return m.reply(global.mess.owner)
+				if (!text) return m.reply(`*Format Salah!*\n\nContoh: ${prefix + command} OWNER | setbio`)
+				let [category, cmdName] = text.split('|').map(x => x.trim())
+				if (!category || !cmdName) return m.reply(`*Format Salah!*\n\nContoh: ${prefix + command} OWNER | setbio`)
+				
+				let matchedCat = Object.keys(db.customMenus || {}).find(k => k.toLowerCase() === category.toLowerCase())
+				if (!matchedCat || !db.customMenus[matchedCat]) return m.reply(`Kategori *${category.toUpperCase()}* tidak ditemukan!`)
+				
+				let list = db.customMenus[matchedCat]
+				let index = list.findIndex(x => x.command === cmdName.toLowerCase())
+				if (index === -1) return m.reply(`Submenu *${cmdName.toLowerCase()}* tidak ditemukan di kategori *${matchedCat}*!`)
+				
+				list.splice(index, 1)
+				m.reply(`Berhasil menghapus submenu *${prefix + cmdName.toLowerCase()}* dari kategori *${matchedCat}*!`)
+			}
+			break
+			case 'public': {
+				if (!isCreator) return m.reply(global.mess.owner)
+				if (naze.public && set.public && set.grouponly && set.privateonly) return m.reply('*Bot sudah dalam mode Public sebelumnya*')
+				naze.public = set.public = true
+				set.grouponly = true
+				set.privateonly = true
+				m.reply('*Sukses Mengubah Ke Mode Public. Sekarang semua orang bisa chat/menggunakan bot ini.*')
+			}
+			break
+			case 'self': {
+				if (!isCreator) return m.reply(global.mess.owner)
+				if (!naze.public && !set.public && !set.grouponly && !set.privateonly) return m.reply('*Bot sudah dalam mode Self sebelumnya*')
+				set.grouponly = false
+				set.privateonly = false
+				naze.public = set.public = false
+				m.reply('*Sukses Mengubah Ke Mode Self. Sekarang hanya Owner yang bisa chat/menggunakan bot ini.*')
 			}
 			break
 			case 'delowner': {
@@ -2996,7 +3071,26 @@ Select Bot Settings:
 
 				let isDrawRequest = isImg || /^(gambar|buatkan gambar|buat gambar|draw|paint|generate image|create image|lukis|lukiskan)\b/i.test(text);
 
-				m.reply(global.mess.wait || 'Tunggu sebentar...');
+				let { key: loadingKey } = await m.reply(`⌛ Sedang memproses...\n▬▬▬▬▬▬▬▬▬▬`);
+				let loadingBars = [
+					"■▬▬▬▬▬▬▬▬▬",
+					"■■▬▬▬▬▬▬▬▬",
+					"■■■▬▬▬▬▬▬▬",
+					"■■■■▬▬▬▬▬▬",
+					"■■■■■▬▬▬▬▬",
+					"■■■■■■▬▬▬▬",
+					"■■■■■■■▬▬▬",
+					"■■■■■■■■▬▬",
+					"■■■■■■■■■▬",
+					"■■■■■■■■■■"
+				];
+				let barIndex = 0;
+				let loadingInterval = setInterval(() => {
+					if (barIndex < loadingBars.length) {
+						m.reply(`⌛ Sedang memproses...\n${loadingBars[barIndex]}`, { edit: loadingKey }).catch(() => {});
+						barIndex++;
+					}
+				}, 1000);
 
 				try {
 					if (isDrawRequest) {
@@ -3036,20 +3130,24 @@ Select Bot Settings:
 							}
 						});
 
+						clearInterval(loadingInterval);
+
 						if (response.data && response.data.output && response.data.output.choices) {
 							let choices = response.data.output.choices[0];
 							if (choices.message && choices.message.content) {
 								let imgUrl = choices.message.content.find(c => c.image)?.image || choices.message.content[0]?.image;
 								if (imgUrl) {
+									await m.reply(`✅ Selesai memproses!`, { edit: loadingKey }).catch(() => {});
 									await naze.sendMessage(m.chat, { image: { url: imgUrl }, caption: 'Selesai! ✨' }, { quoted: m });
 								} else {
-									m.reply('Gagal mendapatkan gambar dari respon Qwen AI.');
+									await m.reply(`⚠️ Gagal memproses gambar!\n\n❌ Error: Gagal mendapatkan URL gambar dari respon Qwen AI.`, { edit: loadingKey }).catch(() => {});
 								}
 							} else {
-								m.reply('Format respon Qwen AI tidak sesuai.');
+								await m.reply(`⚠️ Gagal memproses gambar!\n\n❌ Error: Format respon Qwen AI tidak sesuai.`, { edit: loadingKey }).catch(() => {});
 							}
 						} else {
-							m.reply('Gagal memproses gambar. Respon kosong.');
+							let errMsg = response.data?.message || 'Respon kosong dari Qwen AI';
+							await m.reply(`⚠️ Gagal memproses gambar!\n\n❌ Error: ${errMsg}`, { edit: loadingKey }).catch(() => {});
 						}
 					} else {
 						// Chat Completions
@@ -3062,21 +3160,20 @@ Select Bot Settings:
 								'Content-Type': 'application/json'
 							}
 						});
+						clearInterval(loadingInterval);
 						const result = response.data.choices[0].message.content;
-						await m.reply(result);
+						await m.reply(result, { edit: loadingKey }).catch(async () => {
+							await m.reply(result);
+						});
 					}
 				} catch (e) {
+					clearInterval(loadingInterval);
 					console.error(e);
-					let errorMsg = '❌ *Gagal mengambil respon dari Qwen AI*\n\n';
-					if (e.response) {
-						errorMsg += `*Status:* ${e.response.status} ${e.response.statusText || ''}\n`;
-						if (e.response.data) {
-							errorMsg += `*Detail Error:* \n\`\`\`json\n${JSON.stringify(e.response.data, null, 2)}\n\`\`\``;
-						}
-					} else {
-						errorMsg += `*Pesan Error:* ${e.message}`;
+					let errorDetails = e.message || 'Error tidak diketahui';
+					if (e.response && e.response.data && e.response.data.message) {
+						errorDetails = e.response.data.message;
 					}
-					m.reply(errorMsg);
+					await m.reply(`⚠️ *Gagal mengedit gambar!*\n\n❌ *Error:* ${errorDetails}`);
 				}
 			}
 			break
@@ -4682,8 +4779,34 @@ Select Bot Settings:
 │${setv} >
 │${setv} <
 ╰──────❍`
+				let finalMenunya = menunya;
+				if (db.customMenus && Object.keys(db.customMenus).length > 0) {
+					let categories = Object.entries(db.customMenus).filter(([_, list]) => list.length > 0);
+					if (categories.length > 0) {
+						if (finalMenunya.endsWith('╰──────❍')) {
+							finalMenunya = finalMenunya.slice(0, -8) + '╰─┬────❍';
+						} else if (finalMenunya.endsWith('╰──────❍\n')) {
+							finalMenunya = finalMenunya.slice(0, -9) + '╰─┬────❍\n';
+						} else {
+							finalMenunya = finalMenunya.replace(/╰──────❍\s*$/, '╰─┬────❍');
+						}
+						
+						categories.forEach(([cat, list], index) => {
+							let isLast = index === categories.length - 1;
+							finalMenunya += `\n╭─┴❍「 *${cat.toUpperCase()}* 」❍\n`;
+							list.forEach(sub => {
+								finalMenunya += `│${setv} ${prefix}${sub.command}${sub.description ? ' ' + sub.description : ''}\n`;
+							});
+							if (isLast) {
+								finalMenunya += `╰──────❍`;
+							} else {
+								finalMenunya += `╰─┬────❍`;
+							}
+						});
+					}
+				}
 				await naze.sendMessageV3(m.chat, {
-					text: menunya,
+					text: finalMenunya,
 					title: ucapanWaktu,
 					description: packname,
 					thumbnailUrl: profile,
@@ -5008,6 +5131,18 @@ Select Bot Settings:
 			break
 
 			default:
+			if (command.endsWith('menu')) {
+				let catName = command.slice(0, -4).toLowerCase();
+				let matchedCat = Object.keys(db.customMenus || {}).find(k => k.toLowerCase() === catName);
+				if (matchedCat && db.customMenus[matchedCat].length > 0) {
+					let customText = `╭──❍「 *${matchedCat.toUpperCase()}* 」❍\n`;
+					db.customMenus[matchedCat].forEach(sub => {
+						customText += `│${setv} ${prefix}${sub.command}${sub.description ? ' ' + sub.description : ''}\n`;
+					});
+					customText += `╰──────❍`;
+					return m.reply(customText);
+				}
+			}
 			if (budy.startsWith('>')) {
 				if (!isCreator) return
 				try {
