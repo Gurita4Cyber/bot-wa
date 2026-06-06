@@ -185,7 +185,7 @@ const naze = async (naze, m, msg, store) => {
 		}
 		
 		// Set Mode
-		if (!isCreator && !m.key.fromMe) {
+		if (!isCreator && !isPremium && !m.key.fromMe) {
 			if (!m.isGroup && m.chat.endsWith('@s.whatsapp.net')) {
 				const welcomeMsg = `Bip bop! 🤖 Halo! Selamat datang! 👋\n\nButuh bantuan asisten BOT pintar untuk mempermudah pekerjaanmu? 💡\n\nLangsung saja minta akses BOT-nya ke Mang Awi dengan klik link di bawah ini ya:\n📲 https://wa.me/+6289522269991\n\nYuk, klik sekarang dan nikmati kemudahannya! 🚀✨`;
 				if (!naze.public || (set.grouponly && !set.privateonly)) {
