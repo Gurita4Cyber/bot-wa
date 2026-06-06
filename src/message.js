@@ -225,7 +225,7 @@ async function LoadDataBase(naze, m) {
 			autobackup: false,
 			botname: global.botname || 'Mang Awi Bot',
 			packname: global.packname || 'Bot WhatsApp',
-			template: 'documentMessage',
+			template: 2,
 			owner: global.owner,
 			whitelist: [],
 		};
@@ -315,6 +315,7 @@ async function LoadDataBase(naze, m) {
 async function MessagesUpsert(naze, message, store) {
 	try {
 		let botNumber = await naze.decodeJid(naze.user.id);
+		naze.public = global.db?.set?.[botNumber]?.public ?? true;
 		const msg = message.messages[0];
 		if ((msg?.messageTimestamp * 1000) < botStartTime) return;
 		const remoteJid = msg.key.remoteJid;

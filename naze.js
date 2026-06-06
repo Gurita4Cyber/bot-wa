@@ -182,11 +182,11 @@ const naze = async (naze, m, msg, store) => {
 		
 		// Set Mode
 		if (!isCreator) {
-			if ((set.grouponly === set.privateonly)) {
-				if (!naze.public && !m.key.fromMe) return
-			} else if (set.grouponly) {
+			if (!naze.public && !m.key.fromMe) return
+			
+			if (set.grouponly && !set.privateonly) {
 				if (!m.isGroup) return
-			} else if (set.privateonly) {
+			} else if (set.privateonly && !set.grouponly) {
 				if (m.isGroup) return
 			}
 
@@ -1104,6 +1104,29 @@ const naze = async (naze, m, msg, store) => {
 				m.reply('*Sukses Mengubah Ke Mode Self. Sekarang hanya Owner yang bisa chat/menggunakan bot ini.*')
 			}
 			break
+			case 'botreset': {
+				if (!isCreator) return m.reply(global.mess.owner)
+				set.log = false
+				set.join = false
+				set.public = false
+				naze.public = false
+				set.anticall = false
+				set.original = false
+				set.readsw = false
+				set.autobio = false
+				set.autoread = false
+				set.antispam = false
+				set.autotyping = false
+				set.grouponly = false
+				set.privateonly = false
+				set.whitelistonly = false
+				set.didyoumean = false
+				set.autobackup = false
+				set.multiprefix = false
+				set.template = 2
+				m.reply('*Sukses mereset semua pengaturan bot menjadi OFF/Nonaktif dan template menu diatur ke List Menu (2).*')
+			}
+			break
 			case 'delowner': {
 				if (!isCreator) return m.reply(global.mess.owner)
 				if (!text) return m.reply(`Kirim/tag Nomernya!\nExample:\n${prefix + command} 62xxx`)
@@ -2006,7 +2029,7 @@ const naze = async (naze, m, msg, store) => {
 						m.reply('*Sukses Change To Private Only*')
 					} else m.reply('Mode self/public/group/private/all')
 					break
-					case 'log': case 'anticall': case 'autobio': case 'autoread': case 'autotyping': case 'readsw': case 'multiprefix': case 'antispam': case 'didyoumean':
+					case 'log': case 'join': case 'public': case 'anticall': case 'original': case 'readsw': case 'autobio': case 'autoread': case 'antispam': case 'autotyping': case 'grouponly': case 'multiprefix': case 'privateonly': case 'whitelistonly': case 'didyoumean': case 'autobackup':
 					if (!isCreator) return m.reply(global.mess.owner)
 					if (args[1] == 'on') {
 						if (set[args[0]]) return m.reply('*Sudah Aktif Sebelumnya*')
@@ -4525,6 +4548,7 @@ Select Bot Settings:
 ├ *Date* : ${date}
 ├ *Day* : ${locale_day}
 ├ *Time* : ${date_time}
+├ *Channel* : https://whatsapp.com/channel/0029Vb8EwT85PO0vP1iT4U3y
 ╰──────❍
 ╭──❍「 *BOT* 」❍
 │${setv} ${prefix}profile
@@ -4770,6 +4794,7 @@ Select Bot Settings:
 │${setv} ${prefix}getmsgstore
 │${setv} ${prefix}bot --settings
 │${setv} ${prefix}bot settings
+│${setv} ${prefix}botreset
 │${setv} ${prefix}getsession
 │${setv} ${prefix}delsession
 │${setv} ${prefix}delsampah
@@ -4778,6 +4803,12 @@ Select Bot Settings:
 │${setv} $
 │${setv} >
 │${setv} <
+╰─┬────❍
+╭─┴❍「 *SUPER ADMIN* 」❍
+│${setv} ${prefix}addmenu (menambah menu)
+│${setv} ${prefix}addsubmenu (tambahsubmenu)
+│${setv} ${prefix}delmenu (hapus menu)
+│${setv} ${prefix}delsubmenu (hapus submenu)
 ╰──────❍`
 				let finalMenunya = menunya;
 				if (db.customMenus && Object.keys(db.customMenus).length > 0) {
@@ -5118,6 +5149,7 @@ Select Bot Settings:
 │${setv} ${prefix}getmsgstore
 │${setv} ${prefix}bot --settings
 │${setv} ${prefix}bot settings
+│${setv} ${prefix}botreset
 │${setv} ${prefix}getsession
 │${setv} ${prefix}delsession
 │${setv} ${prefix}delsampah
@@ -5126,6 +5158,16 @@ Select Bot Settings:
 │${setv} $
 │${setv} >
 │${setv} <
+╰──────❍`)
+			}
+			break
+			case 'superadminmenu': {
+				m.reply(`
+╭──❍「 *SUPER ADMIN* 」❍
+│${setv} ${prefix}addmenu (menambah menu)
+│${setv} ${prefix}addsubmenu (tambahsubmenu)
+│${setv} ${prefix}delmenu (hapus menu)
+│${setv} ${prefix}delsubmenu (hapus submenu)
 ╰──────❍`)
 			}
 			break
