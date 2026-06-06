@@ -3872,13 +3872,13 @@ Select Bot Settings:
 					m.react('⏳');
 					let media = await quoted.download();
 					
-					const hfToken = process.env.HF_TOKEN || global.qwen.apikey;
+					const hfToken = process.env.HF_TOKEN || global.qwen.hfToken || global.qwen.apikey;
 					const client = new InferenceClient(hfToken);
 					
 					const imageBlob = await client.imageToImage({
 						provider: "fal-ai",
 						model: "ScottzillaSystems/qwen-image-edit-plus-nsfw-lora",
-						inputs: media,
+						inputs: new Blob([media], { type: mime || 'image/png' }),
 						parameters: {
 							prompt: text,
 						},

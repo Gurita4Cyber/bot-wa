@@ -87,7 +87,8 @@ global.qwen = {
 	apikey: "sk-ws-H.HYILXX.bDQW.MEUCIFZbou1SZ5YHzrqQA85CNoWmuTkx_iD1VQxfm5m7aTbhAiEAjFR_PUb8fZcOHiDbVl1R5Fe_DyPa3gn2mUeu1pRZdEE",
 	apiHost: "ws-7xgy1zs71ib3tsvo.ap-southeast-1.maas.aliyuncs.com",
 	openAiCompatible: "https://ws-7xgy1zs71ib3tsvo.ap-southeast-1.maas.aliyuncs.com/compatible-mode/v1",
-	dashScope: "https://ws-7xgy1zs71ib3tsvo.ap-southeast-1.maas.aliyuncs.com/api/v1"
+	dashScope: "https://ws-7xgy1zs71ib3tsvo.ap-southeast-1.maas.aliyuncs.com/api/v1",
+	hfToken: "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" // Masukkan Hugging Face API Token di sini jika tidak menggunakan process.env.HF_TOKEN
 }
 
 // Lainnya
