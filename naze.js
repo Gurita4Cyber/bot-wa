@@ -3105,11 +3105,23 @@ Select Bot Settings:
 			
 			// Islam Menu
 			case 'jadwalshalat': case 'jadwalsholat': {
-				if (!text) return m.reply(`Example: ${prefix + command} Bogor`)
+				if (!text) return m.reply(`Contoh: ${prefix + command} Bogor`)
+				let { key: loadingKey } = await m.reply(`⌛ Sedang memproses...\n▬▬▬▬▬▬▬▬▬▬`)
+				let loadingBars = ["■▬▬▬▬▬▬▬▬▬", "■■▬▬▬▬▬▬▬▬", "■■■▬▬▬▬▬▬▬", "■■■■▬▬▬▬▬▬", "■■■■■▬▬▬▬▬", "■■■■■■▬▬▬▬", "■■■■■■■▬▬▬", "■■■■■■■■▬▬", "■■■■■■■■■▬", "■■■■■■■■■■"]
+				let barIndex = 0
+				let loadingInterval = setInterval(() => {
+					if (barIndex < loadingBars.length) {
+						m.reply(`⌛ Sedang memproses...\n${loadingBars[barIndex]}`, { edit: loadingKey }).catch(() => {})
+						barIndex++
+					}
+				}, 1000)
 				try {
 					m.react('⏳')
 					const found = await searchKabKota(text)
-					if (!found) return m.reply(`Kabupaten/Kota *${text}* tidak ditemukan.\n\nPastikan nama kota/kabupaten di Indonesia ditulis dengan benar.`)
+					if (!found) {
+						clearInterval(loadingInterval)
+						return m.reply(`Kabupaten/Kota *${text}* tidak ditemukan.\n\nPastikan nama kota/kabupaten di Indonesia ditulis dengan benar.`, { edit: loadingKey }).catch(() => {})
+					}
 					
 					const today = new Date()
 					const day = today.getDate()
@@ -3128,11 +3140,15 @@ Select Bot Settings:
 					}).then(r => r.json())
 					
 					if (res.code !== 200 || !res.data || !res.data.jadwal) {
-						return m.reply('Gagal mengambil jadwal shalat dari server.')
+						clearInterval(loadingInterval)
+						return m.reply('Gagal mengambil jadwal shalat dari server.', { edit: loadingKey }).catch(() => {})
 					}
 					
 					const todayJadwal = res.data.jadwal.find(j => parseInt(j.tanggal) === day)
-					if (!todayJadwal) return m.reply('Jadwal shalat hari ini tidak ditemukan.')
+					if (!todayJadwal) {
+						clearInterval(loadingInterval)
+						return m.reply('Jadwal shalat hari ini tidak ditemukan.', { edit: loadingKey }).catch(() => {})
+					}
 					
 					let sholatText = `╭──❍「 *JADWAL SHALAT* 」❍\n`
 					sholatText += `├ *Wilayah* : ${found.kabkota} (${found.provinsi})\n`
@@ -3148,21 +3164,35 @@ Select Bot Settings:
 					sholatText += `├ *Isya* : ${todayJadwal.isya}\n`
 					sholatText += `╰──────❍`
 					
-					m.reply(sholatText)
+					clearInterval(loadingInterval)
+					m.reply(sholatText, { edit: loadingKey }).catch(() => m.reply(sholatText))
 				} catch (e) {
+					clearInterval(loadingInterval)
 					console.error(e)
-					m.reply('Terjadi kesalahan saat mengambil jadwal shalat.')
+					m.reply('Terjadi kesalahan saat mengambil jadwal shalat.', { edit: loadingKey }).catch(() => m.reply('Terjadi kesalahan saat mengambil jadwal shalat.'))
 				}
 			}
 			break
 			case 'alquran': {
+				let { key: loadingKey } = await m.reply(`⌛ Sedang memproses...\n▬▬▬▬▬▬▬▬▬▬`)
+				let loadingBars = ["■▬▬▬▬▬▬▬▬▬", "■■▬▬▬▬▬▬▬▬", "■■■▬▬▬▬▬▬▬", "■■■■▬▬▬▬▬▬", "■■■■■▬▬▬▬▬", "■■■■■■▬▬▬▬", "■■■■■■■▬▬▬", "■■■■■■■■▬▬", "■■■■■■■■■▬", "■■■■■■■■■■"]
+				let barIndex = 0
+				let loadingInterval = setInterval(() => {
+					if (barIndex < loadingBars.length) {
+						m.reply(`⌛ Sedang memproses...\n${loadingBars[barIndex]}`, { edit: loadingKey }).catch(() => {})
+						barIndex++
+					}
+				}, 1000)
 				try {
 					m.react('⏳')
 					let page = text ? parseInt(text.trim()) : 1
 					if (isNaN(page) || page < 1 || page > 4) page = 1
 					
 					const listRes = await fetch('https://equran.id/api/v2/surat').then(r => r.json())
-					if (listRes.code !== 200 || !listRes.data) return m.reply('Gagal mengambil daftar surat.')
+					if (listRes.code !== 200 || !listRes.data) {
+						clearInterval(loadingInterval)
+						return m.reply('Gagal mengambil daftar surat.', { edit: loadingKey }).catch(() => {})
+					}
 					
 					const itemsPerPage = 30
 					const startIdx = (page - 1) * itemsPerPage
@@ -3183,22 +3213,36 @@ Select Bot Settings:
 						txt += `*Catatan:* Ketik *${prefix + command} ${page + 1}* untuk membuka halaman berikutnya.`
 					}
 					
-					m.reply(txt)
+					clearInterval(loadingInterval)
+					m.reply(txt, { edit: loadingKey }).catch(() => m.reply(txt))
 				} catch (e) {
+					clearInterval(loadingInterval)
 					console.error(e)
-					m.reply('Terjadi kesalahan saat mengambil daftar Al-Quran.')
+					m.reply('Terjadi kesalahan saat mengambil daftar Al-Quran.', { edit: loadingKey }).catch(() => m.reply('Terjadi kesalahan saat mengambil daftar Al-Quran.'))
 				}
 			}
 			break
 			case 'surat': case 'surah': {
 				if (!text) return m.reply(`Example: ${prefix + command} yasin\nAtau membaca ayat tertentu: ${prefix + command} yasin | 1-10`)
+				let { key: loadingKey } = await m.reply(`⌛ Sedang memproses...\n▬▬▬▬▬▬▬▬▬▬`)
+				let loadingBars = ["■▬▬▬▬▬▬▬▬▬", "■■▬▬▬▬▬▬▬▬", "■■■▬▬▬▬▬▬▬", "■■■■▬▬▬▬▬▬", "■■■■■▬▬▬▬▬", "■■■■■■▬▬▬▬", "■■■■■■■▬▬▬", "■■■■■■■■▬▬", "■■■■■■■■■▬", "■■■■■■■■■■"]
+				let barIndex = 0
+				let loadingInterval = setInterval(() => {
+					if (barIndex < loadingBars.length) {
+						m.reply(`⌛ Sedang memproses...\n${loadingBars[barIndex]}`, { edit: loadingKey }).catch(() => {})
+						barIndex++
+					}
+				}, 1000)
 				try {
 					m.react('⏳')
 					let [query, range] = text.split('|').map(x => x.trim())
 					
 					// Fetch list of surahs
 					const listRes = await fetch('https://equran.id/api/v2/surat').then(r => r.json())
-					if (listRes.code !== 200 || !listRes.data) return m.reply('Gagal mengambil daftar surat.')
+					if (listRes.code !== 200 || !listRes.data) {
+						clearInterval(loadingInterval)
+						return m.reply('Gagal mengambil daftar surat.', { edit: loadingKey }).catch(() => {})
+					}
 					
 					// Find surah
 					let foundSurat = null
@@ -3209,11 +3253,17 @@ Select Bot Settings:
 						foundSurat = listRes.data.find(s => s.namaLatin.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanQuery))
 					}
 					
-					if (!foundSurat) return m.reply(`Surat *${query}* tidak ditemukan.`)
+					if (!foundSurat) {
+						clearInterval(loadingInterval)
+						return m.reply(`Surat *${query}* tidak ditemukan.`, { edit: loadingKey }).catch(() => {})
+					}
 					
 					// Fetch surah details
 					const detailRes = await fetch(`https://equran.id/api/v2/surat/${foundSurat.nomor}`).then(r => r.json())
-					if (detailRes.code !== 200 || !detailRes.data) return m.reply('Gagal mengambil detail surat.')
+					if (detailRes.code !== 200 || !detailRes.data) {
+						clearInterval(loadingInterval)
+						return m.reply('Gagal mengambil detail surat.', { edit: loadingKey }).catch(() => {})
+					}
 					
 					const data = detailRes.data
 					const totalAyat = data.jumlahAyat
@@ -3254,22 +3304,36 @@ Select Bot Settings:
 						quranText += `\n*Catatan:* Gunakan *${prefix + command} ${query} | ${end + 1}-${Math.min(end + 25, totalAyat)}* untuk membaca ayat berikutnya.`
 					}
 					
-					m.reply(quranText)
+					clearInterval(loadingInterval)
+					m.reply(quranText, { edit: loadingKey }).catch(() => m.reply(quranText))
 				} catch (e) {
+					clearInterval(loadingInterval)
 					console.error(e)
-					m.reply('Terjadi kesalahan saat mengambil data Al-Quran.')
+					m.reply('Terjadi kesalahan saat mengambil data Al-Quran.', { edit: loadingKey }).catch(() => m.reply('Terjadi kesalahan saat mengambil data Al-Quran.'))
 				}
 			}
 			break
 			case 'tafsir': {
 				if (!text) return m.reply(`Contoh: ${prefix + command} yasin\nAtau membaca tafsir ayat tertentu: ${prefix + command} yasin | 1-5`)
+				let { key: loadingKey } = await m.reply(`⌛ Sedang memproses...\n▬▬▬▬▬▬▬▬▬▬`)
+				let loadingBars = ["■▬▬▬▬▬▬▬▬▬", "■■▬▬▬▬▬▬▬▬", "■■■▬▬▬▬▬▬▬", "■■■■▬▬▬▬▬▬", "■■■■■▬▬▬▬▬", "■■■■■■▬▬▬▬", "■■■■■■■▬▬▬", "■■■■■■■■▬▬", "■■■■■■■■■▬", "■■■■■■■■■■"]
+				let barIndex = 0
+				let loadingInterval = setInterval(() => {
+					if (barIndex < loadingBars.length) {
+						m.reply(`⌛ Sedang memproses...\n${loadingBars[barIndex]}`, { edit: loadingKey }).catch(() => {})
+						barIndex++
+					}
+				}, 1000)
 				try {
 					m.react('⏳')
 					let [query, range] = text.split('|').map(x => x.trim())
 					
 					// Fetch list of surahs
 					const listRes = await fetch('https://equran.id/api/v2/surat').then(r => r.json())
-					if (listRes.code !== 200 || !listRes.data) return m.reply('Gagal mengambil daftar surat.')
+					if (listRes.code !== 200 || !listRes.data) {
+						clearInterval(loadingInterval)
+						return m.reply('Gagal mengambil daftar surat.', { edit: loadingKey }).catch(() => {})
+					}
 					
 					// Find surah
 					let foundSurat = null
@@ -3280,11 +3344,17 @@ Select Bot Settings:
 						foundSurat = listRes.data.find(s => s.namaLatin.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanQuery))
 					}
 					
-					if (!foundSurat) return m.reply(`Surat *${query}* tidak ditemukan.`)
+					if (!foundSurat) {
+						clearInterval(loadingInterval)
+						return m.reply(`Surat *${query}* tidak ditemukan.`, { edit: loadingKey }).catch(() => {})
+					}
 					
 					// Fetch tafsir details
 					const detailRes = await fetch(`https://equran.id/api/v2/tafsir/${foundSurat.nomor}`).then(r => r.json())
-					if (detailRes.code !== 200 || !detailRes.data) return m.reply('Gagal mengambil tafsir surat.')
+					if (detailRes.code !== 200 || !detailRes.data) {
+						clearInterval(loadingInterval)
+						return m.reply('Gagal mengambil tafsir surat.', { edit: loadingKey }).catch(() => {})
+					}
 					
 					const data = detailRes.data
 					const totalAyat = data.jumlahAyat
@@ -3317,18 +3387,33 @@ Select Bot Settings:
 						tafsirText += `*Catatan:* Gunakan *${prefix + command} ${query} | ${end + 1}-${Math.min(end + 5, totalAyat)}* untuk membaca tafsir ayat berikutnya.`
 					}
 					
-					m.reply(tafsirText)
+					clearInterval(loadingInterval)
+					m.reply(tafsirText, { edit: loadingKey }).catch(() => m.reply(tafsirText))
 				} catch (e) {
+					clearInterval(loadingInterval)
 					console.error(e)
-					m.reply('Terjadi kesalahan saat mengambil data Tafsir.')
+					m.reply('Terjadi kesalahan saat mengambil data Tafsir.', { edit: loadingKey }).catch(() => m.reply('Terjadi kesalahan saat mengambil data Tafsir.'))
 				}
 			}
 			break
 			case 'doa': {
+				let { key: loadingKey } = await m.reply(`⌛ Sedang memproses...\n▬▬▬▬▬▬▬▬▬▬`)
+				let loadingBars = ["■▬▬▬▬▬▬▬▬▬", "■■▬▬▬▬▬▬▬▬", "■■■▬▬▬▬▬▬▬", "■■■■▬▬▬▬▬▬", "■■■■■▬▬▬▬▬", "■■■■■|▬▬▬▬", "■■■■■■■▬▬▬", "■■■■■■■■▬▬", "■■■■■■■■■▬", "■■■■■■■■■■"] // Consistent loading bars
+				loadingBars[5] = "■■■■■■▬▬▬▬" // Fix typo in loading bar
+				let barIndex = 0
+				let loadingInterval = setInterval(() => {
+					if (barIndex < loadingBars.length) {
+						m.reply(`⌛ Sedang memproses...\n${loadingBars[barIndex]}`, { edit: loadingKey }).catch(() => {})
+						barIndex++
+					}
+				}, 1000)
 				try {
 					m.react('⏳')
 					const listRes = await fetch('https://equran.id/api/doa').then(r => r.json())
-					if (listRes.status !== 'success' || !listRes.data) return m.reply('Gagal mengambil daftar doa.')
+					if (listRes.status !== 'success' || !listRes.data) {
+						clearInterval(loadingInterval)
+						return m.reply('Gagal mengambil daftar doa.', { edit: loadingKey }).catch(() => {})
+					}
 					
 					if (!text) {
 						let txt = `╭──❍「 *PANDUAN DOA* 」❍\n`
@@ -3341,7 +3426,9 @@ Select Bot Settings:
 							txt += `*${d.id}.* ${d.nama}\n`
 						})
 						txt += `\n_Ketik *${prefix + command} <kata kunci>* untuk mencari doa lainnya._`
-						return m.reply(txt)
+						
+						clearInterval(loadingInterval)
+						return m.reply(txt, { edit: loadingKey }).catch(() => m.reply(txt))
 					}
 					
 					let cleanText = text.trim()
@@ -3349,7 +3436,10 @@ Select Bot Settings:
 					
 					if (!isNaN(cleanText)) {
 						foundDoa = listRes.data.find(d => d.id === parseInt(cleanText))
-						if (!foundDoa) return m.reply(`Doa dengan ID *${cleanText}* tidak ditemukan.`)
+						if (!foundDoa) {
+							clearInterval(loadingInterval)
+							return m.reply(`Doa dengan ID *${cleanText}* tidak ditemukan.`, { edit: loadingKey }).catch(() => {})
+						}
 					} else {
 						const query = cleanText.toLowerCase()
 						const matches = listRes.data.filter(d => 
@@ -3358,7 +3448,8 @@ Select Bot Settings:
 						)
 						
 						if (matches.length === 0) {
-							return m.reply(`Doa dengan kata kunci *${text}* tidak ditemukan.`)
+							clearInterval(loadingInterval)
+							return m.reply(`Doa dengan kata kunci *${text}* tidak ditemukan.`, { edit: loadingKey }).catch(() => {})
 						} else if (matches.length === 1) {
 							foundDoa = matches[0]
 						} else {
@@ -3372,7 +3463,9 @@ Select Bot Settings:
 							if (matches.length > 15) {
 								txt += `\n_Dan ${matches.length - 15} doa lainnya..._`
 							}
-							return m.reply(txt)
+							
+							clearInterval(loadingInterval)
+							return m.reply(txt, { edit: loadingKey }).catch(() => m.reply(txt))
 						}
 					}
 					
@@ -3388,15 +3481,26 @@ Select Bot Settings:
 						doaText += `*Tentang:*\n_${foundDoa.tentang}_`
 					}
 					
-					m.reply(doaText)
+					clearInterval(loadingInterval)
+					m.reply(doaText, { edit: loadingKey }).catch(() => m.reply(doaText))
 				} catch (e) {
+					clearInterval(loadingInterval)
 					console.error(e)
-					m.reply('Terjadi kesalahan saat mengambil data Doa.')
+					m.reply('Terjadi kesalahan saat mengambil data Doa.', { edit: loadingKey }).catch(() => m.reply('Terjadi kesalahan saat mengambil data Doa.'))
 				}
 			}
 			break
 			case 'imsakiyah': case 'imsakiyahkota': {
 				if (!text) return m.reply(`Contoh: ${prefix + command} jakarta\nAtau melihat hari tertentu: ${prefix + command} jakarta | 5`)
+				let { key: loadingKey } = await m.reply(`⌛ Sedang memproses...\n▬▬▬▬▬▬▬▬▬▬`)
+				let loadingBars = ["■▬▬▬▬▬▬▬▬▬", "■■▬▬▬▬▬▬▬▬", "■■■▬▬▬▬▬▬▬", "■■■■▬▬▬▬▬▬", "■■■■■▬▬▬▬▬", "■■■■■■▬▬▬▬", "■■■■■■■▬▬▬", "■■■■■■■■▬▬", "■■■■■■■■■▬", "■■■■■■■■■■"]
+				let barIndex = 0
+				let loadingInterval = setInterval(() => {
+					if (barIndex < loadingBars.length) {
+						m.reply(`⌛ Sedang memproses...\n${loadingBars[barIndex]}`, { edit: loadingKey }).catch(() => {})
+						barIndex++
+					}
+				}, 1000)
 				try {
 					m.react('⏳')
 					let [query, dayStr] = text.split('|').map(x => x.trim())
@@ -3415,7 +3519,10 @@ Select Bot Settings:
 						}
 					}
 					
-					if (!match) return m.reply(`Kabupaten/Kota *${query}* tidak ditemukan. Pastikan ejaan benar.`)
+					if (!match) {
+						clearInterval(loadingInterval)
+						return m.reply(`Kabupaten/Kota *${query}* tidak ditemukan. Pastikan ejaan benar.`, { edit: loadingKey }).catch(() => {})
+					}
 					
 					const res = await fetch('https://equran.id/api/v2/imsakiyah', {
 						method: 'POST',
@@ -3423,24 +3530,72 @@ Select Bot Settings:
 						body: JSON.stringify({ provinsi: match.provinsi, kabkota: match.kabkota })
 					}).then(r => r.json())
 					
-					if (res.code !== 200 || !res.data) return m.reply('Gagal mengambil jadwal imsakiyah.')
+					if (res.code !== 200 || !res.data) {
+						clearInterval(loadingInterval)
+						return m.reply('Gagal mengambil jadwal imsakiyah.', { edit: loadingKey }).catch(() => {})
+					}
 					
 					const data = res.data
-					let filterDay = dayStr ? parseInt(dayStr) : null
+					let filterDay = null
+					let startDay = 1
+					let endDay = 30
+					let isRange = false
+					
+					if (dayStr) {
+						const cleanDayStr = dayStr.toLowerCase().trim()
+						if (cleanDayStr.includes('minggu') || cleanDayStr.startsWith('m') || cleanDayStr.startsWith('w')) {
+							const matchWeek = cleanDayStr.match(/\d+/)
+							const weekNum = matchWeek ? parseInt(matchWeek[0]) : 1
+							isRange = true
+							if (weekNum === 1) {
+								startDay = 1
+								endDay = 7
+							} else if (weekNum === 2) {
+								startDay = 8
+								endDay = 14
+							} else if (weekNum === 3) {
+								startDay = 15
+								endDay = 21
+							} else if (weekNum === 4 || weekNum === 5) {
+								startDay = 22
+								endDay = 30
+							}
+						} else if (cleanDayStr.includes('-')) {
+							const [s, e] = cleanDayStr.split('-').map(x => parseInt(x.trim()))
+							if (!isNaN(s) && !isNaN(e)) {
+								startDay = Math.max(1, s)
+								endDay = Math.min(30, e)
+								isRange = true
+							}
+						} else {
+							const parsedDay = parseInt(cleanDayStr)
+							if (!isNaN(parsedDay)) {
+								filterDay = parsedDay
+							}
+						}
+					}
 					
 					let txt = `╭──❍「 *IMSAKIYAH ${data.kabkota.toUpperCase()}* 」❍\n`
 					txt += `├ *Provinsi* : ${data.provinsi}\n`
 					txt += `├ *Tahun* : ${data.hijriah} H / ${data.masehi} M\n`
 					if (filterDay) {
-						txt += `├ *Menampilkan* : Ramadhan Hari Ke-${filterDay}\n`
+						txt += `├ *Menampilkan* : Hari Ke-${filterDay}\n`
+					} else if (isRange) {
+						txt += `├ *Menampilkan* : Hari Ke ${startDay} - ${endDay}\n`
 					} else {
-						txt += `├ *Petunjuk* : Gunakan *${prefix + command} ${query} | <hari>* untuk melihat hari tertentu saja.\n`
+						txt += `├ *Petunjuk* : Gunakan *${prefix + command} ${query} | <hari/minggu>* untuk melihat detail.\n`
+						txt += `├ *Contoh* : \n`
+						txt += `├ - *${prefix + command} ${query} | 5* (Hari ke-5)\n`
+						txt += `├ - *${prefix + command} ${query} | minggu 1* (Hari 1-7)\n`
 					}
 					txt += `╰──────❍\n\n`
 					
 					if (filterDay) {
 						const d = data.imsakiyah.find(i => i.tanggal === filterDay)
-						if (!d) return m.reply(`Hari Ke-${filterDay} tidak ditemukan (Hanya 1-30).`)
+						if (!d) {
+							clearInterval(loadingInterval)
+							return m.reply(`Hari Ke-${filterDay} tidak ditemukan (Hanya 1-30).`, { edit: loadingKey }).catch(() => {})
+						}
 						txt += `*RAMADHAN HARI KE-${d.tanggal}*\n`
 						txt += `├ *Imsak* : ${d.imsak}\n`
 						txt += `├ *Subuh* : ${d.subuh}\n`
@@ -3452,17 +3607,87 @@ Select Bot Settings:
 						txt += `├ *Isya* : ${d.isya}\n`
 						txt += `╰──────❍`
 					} else {
-						txt += `*JADWAL LENGKAP RAMADHAN:*\n`
-						txt += `Tgl | Imsak | Subuh | Dzuhur | Ashar | Maghrib | Isya\n`
-						data.imsakiyah.forEach(d => {
-							txt += `*${d.tanggal}.* ${d.imsak} | ${d.subuh} | ${d.dzuhur} | ${d.ashar} | ${d.maghrib} | ${d.isya}\n`
+						txt += `*JADWAL RAMADHAN (Hari ${startDay} - ${endDay}):*\n`
+						txt += `Tgl. | Imsak | Maghrib\n`
+						const slicedDays = data.imsakiyah.slice(startDay - 1, endDay)
+						slicedDays.forEach(d => {
+							txt += `*${d.tanggal < 10 ? '0' + d.tanggal : d.tanggal}.* Imsak ${d.imsak} | Maghrib ${d.maghrib}\n`
 						})
 					}
 					
-					m.reply(txt)
+					clearInterval(loadingInterval)
+					m.reply(txt, { edit: loadingKey }).catch(() => m.reply(txt))
 				} catch (e) {
+					clearInterval(loadingInterval)
 					console.error(e)
-					m.reply('Terjadi kesalahan saat mengambil data Imsakiyah.')
+					m.reply('Terjadi kesalahan saat mengambil data Imsakiyah.', { edit: loadingKey }).catch(() => m.reply('Terjadi kesalahan saat mengambil data Imsakiyah.'))
+				}
+			}
+			break
+			case 'suratmp3': case 'surahmp3': {
+				if (!text) return m.reply(`Contoh: ${prefix + command} yasin`)
+				let { key: loadingKey } = await m.reply(`⌛ Sedang memproses...\n▬▬▬▬▬▬▬▬▬▬`)
+				let loadingBars = ["■▬▬▬▬▬▬▬▬▬", "■■▬▬▬▬▬▬▬▬", "■■■▬▬▬▬▬▬▬", "■■■■▬▬▬▬▬▬", "■■■■■▬▬▬▬▬", "■■■■■■▬▬▬▬", "■■■■■■■▬▬▬", "■■■■■■■■▬▬", "■■■■■■■■■▬", "■■■■■span"]
+				loadingBars[9] = "■■■■■■■■■■" // Fix array element
+				let barIndex = 0
+				let loadingInterval = setInterval(() => {
+					if (barIndex < loadingBars.length) {
+						m.reply(`⌛ Sedang memproses...\n${loadingBars[barIndex]}`, { edit: loadingKey }).catch(() => {})
+						barIndex++
+					}
+				}, 1000)
+				try {
+					m.react('⏳')
+					let query = text.trim()
+					
+					// Fetch list of surahs
+					const listRes = await fetch('https://equran.id/api/v2/surat').then(r => r.json())
+					if (listRes.code !== 200 || !listRes.data) {
+						clearInterval(loadingInterval)
+						return m.reply('Gagal mengambil daftar surat.', { edit: loadingKey }).catch(() => {})
+					}
+					
+					// Find surah
+					let foundSurat = null
+					if (!isNaN(query)) {
+						foundSurat = listRes.data.find(s => s.nomor === parseInt(query))
+					} else {
+						const cleanQuery = query.toLowerCase().replace(/[^a-z0-9]/g, '')
+						foundSurat = listRes.data.find(s => s.namaLatin.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanQuery))
+					}
+					
+					if (!foundSurat) {
+						clearInterval(loadingInterval)
+						return m.reply(`Surat *${query}* tidak ditemukan.`, { edit: loadingKey }).catch(() => {})
+					}
+					
+					// Fetch details
+					const detailRes = await fetch(`https://equran.id/api/v2/surat/${foundSurat.nomor}`).then(r => r.json())
+					if (detailRes.code !== 200 || !detailRes.data) {
+						clearInterval(loadingInterval)
+						return m.reply('Gagal mengambil detail surat.', { edit: loadingKey }).catch(() => {})
+					}
+					
+					const data = detailRes.data
+					const audioUrl = data.audioFull['05'] || Object.values(data.audioFull).find(url => url.includes('Misyari-Rasyid-Al-Afasi'))
+					
+					if (!audioUrl) {
+						clearInterval(loadingInterval)
+						return m.reply('Gagal menemukan audio Misyari Rasyid Al-Afasi untuk surat ini.', { edit: loadingKey }).catch(() => {})
+					}
+					
+					clearInterval(loadingInterval)
+					await m.reply(`✅ Mengirim audio Surat ${data.namaLatin} oleh Misyari Rasyid Al-Afasi...`, { edit: loadingKey }).catch(() => {})
+					
+					await naze.sendMessage(m.chat, { 
+						audio: { url: audioUrl }, 
+						mimetype: 'audio/mpeg',
+						fileName: `${data.namaLatin}.mp3`
+					}, { quoted: m })
+				} catch (e) {
+					clearInterval(loadingInterval)
+					console.error(e)
+					m.reply('Terjadi kesalahan saat mengambil data Surat MP3.', { edit: loadingKey }).catch(() => m.reply('Terjadi kesalahan saat mengambil data Surat MP3.'))
 				}
 			}
 			break
@@ -5064,6 +5289,7 @@ Select Bot Settings:
 │${setv} ${prefix}tafsir (nama/no surat)
 │${setv} ${prefix}doa (nama/id doa)
 │${setv} ${prefix}imsakiyahkota (nama kota)
+│${setv} ${prefix}suratmp3 (nama/no surat)
 ╰─┬────❍
 ╭─┴❍「 *TOOLS* 」❍
 │${setv} ${prefix}get (url) 🔸️
@@ -5400,6 +5626,7 @@ Select Bot Settings:
 │${setv} ${prefix}tafsir (nama/no surat)
 │${setv} ${prefix}doa (nama/id doa)
 │${setv} ${prefix}imsakiyahkota (nama kota)
+│${setv} ${prefix}suratmp3 (nama/no surat)
 ╰──────❍`)
 			}
 			break
