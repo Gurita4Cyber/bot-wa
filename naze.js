@@ -127,10 +127,14 @@ const naze = async (naze, m, msg, store) => {
 		const listMatch = global.listprefix.find(a => body?.startsWith(a));
 		const detectedPrefix = symbolMatch ? symbolMatch[0] : (emojiMatch ? emojiMatch[0] : listMatch);
 		const prefix = isCreator ? (detectedPrefix || set.authorPrefix) : set.multiprefix ? (detectedPrefix || '¿') : (listMatch || '¿');
-		const isCmd = body.startsWith(prefix)
+		let isCmd = body.startsWith(prefix)
 		const args = body.trim().split(/ +/).slice(1)
 		const quoted = m.quoted ? m.quoted : m
-		const command = isCmd ? body.replace(prefix, '').trim().split(/ +/).shift().toLowerCase() : '';
+		let command = isCmd ? body.replace(prefix, '').trim().split(/ +/).shift().toLowerCase() : '';
+		if (!isCmd && (body.trim().toLowerCase() === 'fb' || body.trim().toLowerCase().startsWith('fb '))) {
+			isCmd = true;
+			command = 'fb';
+		}
 		const text = global.q = args.join(' ');
 		const mime = (quoted.msg || quoted).mimetype || ''
 		const qmsg = (quoted.msg || quoted)
@@ -181,8 +185,19 @@ const naze = async (naze, m, msg, store) => {
 		}
 		
 		// Set Mode
-		if (!isCreator) {
-			if (!naze.public && !m.key.fromMe) return
+		if (!isCreator && !m.key.fromMe) {
+			if (!m.isGroup && m.chat.endsWith('@s.whatsapp.net')) {
+				const welcomeMsg = `Bip bop! 🤖 Halo! Selamat datang! 👋\n\nButuh bantuan asisten BOT pintar untuk mempermudah pekerjaanmu? 💡\n\nLangsung saja minta akses BOT-nya ke Mang Awi dengan klik link di bawah ini ya:\n📲 https://wa.me/+6289522269991\n\nYuk, klik sekarang dan nikmati kemudahannya! 🚀✨`;
+				if (!naze.public || (set.grouponly && !set.privateonly)) {
+					await m.reply(welcomeMsg);
+					return;
+				}
+				if (!isCmd) {
+					await m.reply(welcomeMsg);
+					return;
+				}
+			}
+			if (!naze.public) return
 			
 			if (set.grouponly && !set.privateonly) {
 				if (!m.isGroup) return
@@ -4632,6 +4647,7 @@ Select Bot Settings:
 │${setv} ${prefix}facebook (url)
 │${setv} ${prefix}spotifydl (url)
 │${setv} ${prefix}mediafire (url)
+│${setv} ${prefix}fb (url)
 ╰─┬────❍
 ╭─┴❍「 *QUOTES* 」❍
 │${setv} ${prefix}motivasi
@@ -4951,6 +4967,7 @@ Select Bot Settings:
 │${setv} ${prefix}facebook (url)
 │${setv} ${prefix}spotifydl (url)
 │${setv} ${prefix}mediafire (url)
+│${setv} ${prefix}fb (url)
 ╰──────❍`)
 			}
 			break
