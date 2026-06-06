@@ -18,6 +18,7 @@ import { performance } from 'perf_hooks';
 import { parsePhoneNumber } from 'awesome-phonenumber';
 import { exec, spawn, execSync } from 'child_process';
 import { generateWAMessageContent, jidNormalizedUser, getContentType } from 'baileys';
+import { InferenceClient } from "@huggingface/inference";
 
 import 'moment/min/locales.js';
 import { UguuSe } from './lib/uploader.js';
@@ -3839,6 +3840,69 @@ Select Bot Settings:
 				}
 			}
 			break
+			case 'qwenai2': {
+				let isImg = /image/.test(mime) || /image/.test(quoted.type);
+				if (!isImg) return m.reply(`Kirim/reply gambar dengan caption ${prefix + command} [prompt]`);
+				if (!text) return m.reply(`Contoh: ${prefix + command} Turn the cat into a tiger.`);
+
+				let { key: loadingKey } = await m.reply(`⌛ Sedang memproses...\n▬▬▬▬▬▬▬▬▬▬`);
+				let loadingBars = [
+					"■▬▬▬▬▬▬▬▬▬",
+					"■■▬▬▬▬▬▬▬▬",
+					"■■■▬▬▬▬▬▬▬",
+					"■■■■▬▬▬▬▬▬",
+					"■■■■■▬▬▬▬▬",
+					"■■■■■■▬▬▬▬",
+					"■■■■■■■▬▬▬",
+					"■■■■■■■■▬▬",
+					"■■■■■■■■■▬",
+					"■■■■■span"
+				];
+				loadingBars[9] = "■■■■■span"; // fix element
+				loadingBars[9] = "■■■■■■■■■■";
+				let barIndex = 0;
+				let loadingInterval = setInterval(() => {
+					if (barIndex < loadingBars.length) {
+						m.reply(`⌛ Sedang memproses...\n${loadingBars[barIndex]}`, { edit: loadingKey }).catch(() => {});
+						barIndex++;
+					}
+				}, 1000);
+
+				try {
+					m.react('⏳');
+					let media = await quoted.download();
+					
+					const hfToken = process.env.HF_TOKEN || global.qwen.apikey;
+					const client = new InferenceClient(hfToken);
+					
+					const imageBlob = await client.imageToImage({
+						provider: "fal-ai",
+						model: "ScottzillaSystems/qwen-image-edit-plus-nsfw-lora",
+						inputs: media,
+						parameters: {
+							prompt: text,
+						},
+					});
+					
+					clearInterval(loadingInterval);
+					
+					if (!imageBlob || !(imageBlob instanceof Blob)) {
+						return m.reply(`⚠️ Gagal memproses gambar!\n\n❌ Error: Respon API bukan gambar valid.`, { edit: loadingKey }).catch(() => {});
+					}
+					
+					const arrayBuffer = await imageBlob.arrayBuffer();
+					const buffer = Buffer.from(arrayBuffer);
+					
+					await m.reply(`✅ Selesai memproses!`, { edit: loadingKey }).catch(() => {});
+					await naze.sendMessage(m.chat, { image: buffer, caption: 'Selesai! ✨' }, { quoted: m });
+				} catch (e) {
+					clearInterval(loadingInterval);
+					console.error(e);
+					let errorDetails = e.message || 'Error tidak diketahui';
+					await m.reply(`⚠️ *Gagal mengedit gambar!*\n\n❌ *Error:* ${errorDetails}`, { edit: loadingKey }).catch(() => m.reply(`⚠️ *Gagal mengedit gambar!*\n\n❌ *Error:* ${errorDetails}`));
+				}
+			}
+			break
 			case 'deepseek': case 'r1': {
 				if (global.APIKeys[global.APIs.neosantara] === 'API_KEY_NEOSANTARA_AI') return m.reply('Silahkan Ganti Apikey Neosantara Ai!\nDi file settings.js. Example: .setapikey neo key_nya');
 				if (!text) return m.reply('Halo! Ada yang bisa dibantu hari ini?');
@@ -5343,6 +5407,7 @@ Select Bot Settings:
 │${setv} ${prefix}archipelago (query)
 │${setv} ${prefix}deepseek (query)
 │${setv} ${prefix}qwenai (query)
+│${setv} ${prefix}qwenai2 (prompt)
 │${setv} ${prefix}txt2img (query)
 ╰─┬────❍
 ╭─┴❍「 *ANIME* 」❍
@@ -5688,6 +5753,7 @@ Select Bot Settings:
 │${setv} ${prefix}archipelago (query)
 │${setv} ${prefix}deepseek (query)
 │${setv} ${prefix}qwenai (query)
+│${setv} ${prefix}qwenai2 (prompt)
 │${setv} ${prefix}txt2img (query)
 ╰──────❍`)
 			}
