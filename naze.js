@@ -42,6 +42,41 @@ const menfesTimeouts = new Map();
 const settingsPath = path.join(__dirname, 'settings.js');
 let canvasModule = null;
 
+let kabKotaShalatCache = null;
+async function searchKabKota(query) {
+	if (!kabKotaShalatCache) {
+		try {
+			const provRes = await fetch('https://equran.id/api/v2/shalat/provinsi').then(r => r.json());
+			const provinces = provRes.data || [];
+			const mapping = [];
+			await Promise.all(provinces.map(async (prov) => {
+				try {
+					const kabRes = await fetch('https://equran.id/api/v2/shalat/kabkota', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ provinsi: prov })
+					}).then(r => r.json());
+					const list = kabRes.data || [];
+					list.forEach(kk => {
+						mapping.push({ provinsi: prov, kabkota: kk });
+					});
+				} catch (e) {}
+			}));
+			kabKotaShalatCache = mapping;
+		} catch (e) {
+			return null;
+		}
+	}
+	
+	const cleanQuery = query.toLowerCase().replace(/[^a-z0-9]/g, '');
+	const found = kabKotaShalatCache.find(item => {
+		const cleanName = item.kabkota.toLowerCase().replace(/[^a-z0-9]/g, '');
+		return cleanName.includes(cleanQuery) || cleanQuery.includes(cleanName);
+	});
+	
+	return found || null;
+}
+
 /*
 	* Create By Naze
 	* Follow https://github.com/nazedev
@@ -3068,6 +3103,59 @@ Select Bot Settings:
 			}
 			break
 			
+			// Islam Menu
+			case 'jadwalshalat': case 'jadwalsholat': {
+				if (!text) return m.reply(`Example: ${prefix + command} Bogor`)
+				try {
+					m.react('⏳')
+					const found = await searchKabKota(text)
+					if (!found) return m.reply(`Kabupaten/Kota *${text}* tidak ditemukan.\n\nPastikan nama kota/kabupaten di Indonesia ditulis dengan benar.`)
+					
+					const today = new Date()
+					const day = today.getDate()
+					const month = today.getMonth() + 1
+					const year = today.getFullYear()
+					
+					const res = await fetch('https://equran.id/api/v2/shalat', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({
+							provinsi: found.provinsi,
+							kabkota: found.kabkota,
+							bulan: month,
+							tahun: year
+						})
+					}).then(r => r.json())
+					
+					if (res.code !== 200 || !res.data || !res.data.jadwal) {
+						return m.reply('Gagal mengambil jadwal shalat dari server.')
+					}
+					
+					const todayJadwal = res.data.jadwal.find(j => parseInt(j.tanggal) === day)
+					if (!todayJadwal) return m.reply('Jadwal shalat hari ini tidak ditemukan.')
+					
+					let sholatText = `╭──❍「 *JADWAL SHALAT* 」❍\n`
+					sholatText += `├ *Wilayah* : ${found.kabkota} (${found.provinsi})\n`
+					sholatText += `├ *Tanggal* : ${todayJadwal.hari}, ${todayJadwal.tanggal_lengkap}\n`
+					sholatText += `├\n`
+					sholatText += `├ *Imsak* : ${todayJadwal.imsak}\n`
+					sholatText += `├ *Subuh* : ${todayJadwal.subuh}\n`
+					sholatText += `├ *Terbit* : ${todayJadwal.terbit}\n`
+					sholatText += `├ *Dhuha* : ${todayJadwal.dhuha}\n`
+					sholatText += `├ *Dzuhur* : ${todayJadwal.dzuhur}\n`
+					sholatText += `├ *Ashar* : ${todayJadwal.ashar}\n`
+					sholatText += `├ *Maghrib* : ${todayJadwal.maghrib}\n`
+					sholatText += `├ *Isya* : ${todayJadwal.isya}\n`
+					sholatText += `╰──────❍`
+					
+					m.reply(sholatText)
+				} catch (e) {
+					console.error(e)
+					m.reply('Terjadi kesalahan saat mengambil jadwal shalat.')
+				}
+			}
+			break
+			
 			// Ai Menu
 			case 'ai': case 'google': case 'bard': case 'gemini': {
 				if (!text) return m.reply(`Example: ${prefix + command} query`)
@@ -4658,6 +4746,9 @@ Select Bot Settings:
 │${setv} ${prefix}bucin
 │${setv} ${prefix}renungan
 ╰─┬────❍
+╭─┴❍「 *ISLAM* 」❍
+│${setv} ${prefix}jadwalshalat (nama kota)
+╰─┬────❍
 ╭─┴❍「 *TOOLS* 」❍
 │${setv} ${prefix}get (url) 🔸️
 │${setv} ${prefix}hd (reply pesan)
@@ -4981,6 +5072,13 @@ Select Bot Settings:
 │${setv} ${prefix}dare
 │${setv} ${prefix}bucin
 │${setv} ${prefix}renungan
+╰──────❍`)
+			}
+			break
+			case 'islammenu': {
+				m.reply(`
+╭──❍「 *ISLAM* 」❍
+│${setv} ${prefix}jadwalshalat (nama kota)
 ╰──────❍`)
 			}
 			break
