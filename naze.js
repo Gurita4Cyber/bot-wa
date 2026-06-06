@@ -3155,6 +3155,317 @@ Select Bot Settings:
 				}
 			}
 			break
+			case 'alquran': {
+				try {
+					m.react('⏳')
+					let page = text ? parseInt(text.trim()) : 1
+					if (isNaN(page) || page < 1 || page > 4) page = 1
+					
+					const listRes = await fetch('https://equran.id/api/v2/surat').then(r => r.json())
+					if (listRes.code !== 200 || !listRes.data) return m.reply('Gagal mengambil daftar surat.')
+					
+					const itemsPerPage = 30
+					const startIdx = (page - 1) * itemsPerPage
+					const endIdx = Math.min(startIdx + itemsPerPage, listRes.data.length)
+					const pageData = listRes.data.slice(startIdx, endIdx)
+					
+					let txt = `╭──❍「 *AL-QURAN (HALAMAN ${page}/4)* 」❍\n`
+					txt += `├ *Gunakan* : ${prefix}surat <nama/no surat>\n`
+					txt += `├ *Untuk membaca isi surat.*\n`
+					txt += `╰──────❍\n\n`
+					
+					pageData.forEach(s => {
+						txt += `*${s.nomor}.* ${s.namaLatin} (${s.jumlahAyat} ayat)\n`
+						txt += `_Arti: ${s.arti}_\n\n`
+					})
+					
+					if (page < 4) {
+						txt += `*Catatan:* Ketik *${prefix + command} ${page + 1}* untuk membuka halaman berikutnya.`
+					}
+					
+					m.reply(txt)
+				} catch (e) {
+					console.error(e)
+					m.reply('Terjadi kesalahan saat mengambil daftar Al-Quran.')
+				}
+			}
+			break
+			case 'surat': case 'surah': {
+				if (!text) return m.reply(`Example: ${prefix + command} yasin\nAtau membaca ayat tertentu: ${prefix + command} yasin | 1-10`)
+				try {
+					m.react('⏳')
+					let [query, range] = text.split('|').map(x => x.trim())
+					
+					// Fetch list of surahs
+					const listRes = await fetch('https://equran.id/api/v2/surat').then(r => r.json())
+					if (listRes.code !== 200 || !listRes.data) return m.reply('Gagal mengambil daftar surat.')
+					
+					// Find surah
+					let foundSurat = null
+					if (!isNaN(query)) {
+						foundSurat = listRes.data.find(s => s.nomor === parseInt(query))
+					} else {
+						const cleanQuery = query.toLowerCase().replace(/[^a-z0-9]/g, '')
+						foundSurat = listRes.data.find(s => s.namaLatin.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanQuery))
+					}
+					
+					if (!foundSurat) return m.reply(`Surat *${query}* tidak ditemukan.`)
+					
+					// Fetch surah details
+					const detailRes = await fetch(`https://equran.id/api/v2/surat/${foundSurat.nomor}`).then(r => r.json())
+					if (detailRes.code !== 200 || !detailRes.data) return m.reply('Gagal mengambil detail surat.')
+					
+					const data = detailRes.data
+					const totalAyat = data.jumlahAyat
+					
+					// Parse range
+					let start = 1
+					let end = Math.min(25, totalAyat) // Default show first 25 verses
+					
+					if (range) {
+						let [rStart, rEnd] = range.split('-').map(x => parseInt(x.trim()))
+						if (!isNaN(rStart) && rStart >= 1 && rStart <= totalAyat) {
+							start = rStart
+							end = !isNaN(rEnd) && rEnd >= rStart && rEnd <= totalAyat ? rEnd : Math.min(rStart + 24, totalAyat)
+						}
+					}
+					
+					// Format message
+					let quranText = `╭──❍「 *SURAT ${data.namaLatin.toUpperCase()}* 」❍\n`
+					quranText += `├ *Arti* : ${data.arti}\n`
+					quranText += `├ *Jumlah Ayat* : ${data.jumlahAyat}\n`
+					quranText += `├ *Tempat Turun* : ${data.tempatTurun}\n`
+					quranText += `├ *Menampilkan* : Ayat ${start} - ${end}\n`
+					quranText += `╰──────❍\n\n`
+					
+					// Add Bismillah if not Al-Fatihah or At-Taubah, and start is 1
+					if (data.nomor !== 1 && data.nomor !== 9 && start === 1) {
+						quranText += `بِسْمِ اللّٰهِ الرَّحْمٰنِ الرَّحِيْمِ\n\n`
+					}
+					
+					const verses = data.ayat.slice(start - 1, end)
+					verses.forEach(v => {
+						quranText += `*${v.nomorAyat}.* ${v.teksArab}\n`
+						quranText += `_${v.teksLatin}_\n`
+						quranText += `"${v.teksIndonesia}"\n\n`
+					})
+					
+					if (end < totalAyat) {
+						quranText += `\n*Catatan:* Gunakan *${prefix + command} ${query} | ${end + 1}-${Math.min(end + 25, totalAyat)}* untuk membaca ayat berikutnya.`
+					}
+					
+					m.reply(quranText)
+				} catch (e) {
+					console.error(e)
+					m.reply('Terjadi kesalahan saat mengambil data Al-Quran.')
+				}
+			}
+			break
+			case 'tafsir': {
+				if (!text) return m.reply(`Contoh: ${prefix + command} yasin\nAtau membaca tafsir ayat tertentu: ${prefix + command} yasin | 1-5`)
+				try {
+					m.react('⏳')
+					let [query, range] = text.split('|').map(x => x.trim())
+					
+					// Fetch list of surahs
+					const listRes = await fetch('https://equran.id/api/v2/surat').then(r => r.json())
+					if (listRes.code !== 200 || !listRes.data) return m.reply('Gagal mengambil daftar surat.')
+					
+					// Find surah
+					let foundSurat = null
+					if (!isNaN(query)) {
+						foundSurat = listRes.data.find(s => s.nomor === parseInt(query))
+					} else {
+						const cleanQuery = query.toLowerCase().replace(/[^a-z0-9]/g, '')
+						foundSurat = listRes.data.find(s => s.namaLatin.toLowerCase().replace(/[^a-z0-9]/g, '').includes(cleanQuery))
+					}
+					
+					if (!foundSurat) return m.reply(`Surat *${query}* tidak ditemukan.`)
+					
+					// Fetch tafsir details
+					const detailRes = await fetch(`https://equran.id/api/v2/tafsir/${foundSurat.nomor}`).then(r => r.json())
+					if (detailRes.code !== 200 || !detailRes.data) return m.reply('Gagal mengambil tafsir surat.')
+					
+					const data = detailRes.data
+					const totalAyat = data.jumlahAyat
+					
+					// Parse range
+					let start = 1
+					let end = Math.min(5, totalAyat) // Default show first 5 verses' tafsirs
+					
+					if (range) {
+						let [rStart, rEnd] = range.split('-').map(x => parseInt(x.trim()))
+						if (!isNaN(rStart) && rStart >= 1 && rStart <= totalAyat) {
+							start = rStart
+							end = !isNaN(rEnd) && rEnd >= rStart && rEnd <= totalAyat ? rEnd : rStart
+						}
+					}
+					
+					// Format message
+					let tafsirText = `╭──❍「 *TAFSIR ${data.namaLatin.toUpperCase()}* 」❍\n`
+					tafsirText += `├ *Arti* : ${data.arti}\n`
+					tafsirText += `├ *Jumlah Ayat* : ${data.jumlahAyat}\n`
+					tafsirText += `├ *Menampilkan* : Ayat ${start} - ${end}\n`
+					tafsirText += `╰──────❍\n\n`
+					
+					const tafsirs = data.tafsir.slice(start - 1, end)
+					tafsirs.forEach(t => {
+						tafsirText += `*Ayat ${t.ayat}:*\n${t.teks}\n\n`
+					})
+					
+					if (end < totalAyat) {
+						tafsirText += `*Catatan:* Gunakan *${prefix + command} ${query} | ${end + 1}-${Math.min(end + 5, totalAyat)}* untuk membaca tafsir ayat berikutnya.`
+					}
+					
+					m.reply(tafsirText)
+				} catch (e) {
+					console.error(e)
+					m.reply('Terjadi kesalahan saat mengambil data Tafsir.')
+				}
+			}
+			break
+			case 'doa': {
+				try {
+					m.react('⏳')
+					const listRes = await fetch('https://equran.id/api/doa').then(r => r.json())
+					if (listRes.status !== 'success' || !listRes.data) return m.reply('Gagal mengambil daftar doa.')
+					
+					if (!text) {
+						let txt = `╭──❍「 *PANDUAN DOA* 」❍\n`
+						txt += `├ *Gunakan* : ${prefix + command} <nama doa/kata kunci>\n`
+						txt += `├ *Atau* : ${prefix + command} <id doa>\n`
+						txt += `├ *Contoh* : ${prefix + command} tidur\n`
+						txt += `╰──────❍\n\n`
+						txt += `*Berikut beberapa daftar doa:*\n`
+						listRes.data.slice(0, 20).forEach(d => {
+							txt += `*${d.id}.* ${d.nama}\n`
+						})
+						txt += `\n_Ketik *${prefix + command} <kata kunci>* untuk mencari doa lainnya._`
+						return m.reply(txt)
+					}
+					
+					let cleanText = text.trim()
+					let foundDoa = null
+					
+					if (!isNaN(cleanText)) {
+						foundDoa = listRes.data.find(d => d.id === parseInt(cleanText))
+						if (!foundDoa) return m.reply(`Doa dengan ID *${cleanText}* tidak ditemukan.`)
+					} else {
+						const query = cleanText.toLowerCase()
+						const matches = listRes.data.filter(d => 
+							d.nama.toLowerCase().includes(query) || 
+							d.grup.toLowerCase().includes(query)
+						)
+						
+						if (matches.length === 0) {
+							return m.reply(`Doa dengan kata kunci *${text}* tidak ditemukan.`)
+						} else if (matches.length === 1) {
+							foundDoa = matches[0]
+						} else {
+							let txt = `╭──❍「 *HASIL PENCARIAN DOA* 」❍\n`
+							txt += `├ Menemukan ${matches.length} doa yang cocok.\n`
+							txt += `╰──────❍\n\n`
+							txt += `Pilih nomor ID doa di bawah ini (contoh: *${prefix + command} ${matches[0].id}*):\n\n`
+							matches.slice(0, 15).forEach(m => {
+								txt += `*${m.id}.* ${m.nama} (${m.grup})\n`
+							})
+							if (matches.length > 15) {
+								txt += `\n_Dan ${matches.length - 15} doa lainnya..._`
+							}
+							return m.reply(txt)
+						}
+					}
+					
+					// Display single doa details
+					let doaText = `╭──❍「 *DOA* 」❍\n`
+					doaText += `├ *Nama* : ${foundDoa.nama}\n`
+					doaText += `├ *Grup* : ${foundDoa.grup}\n`
+					doaText += `╰──────❍\n\n`
+					doaText += `*Arab:*\n${foundDoa.ar}\n\n`
+					doaText += `*Latin:*\n_${foundDoa.tr}_\n\n`
+					doaText += `*Terjemahan:*\n"${foundDoa.idn}"\n\n`
+					if (foundDoa.tentang) {
+						doaText += `*Tentang:*\n_${foundDoa.tentang}_`
+					}
+					
+					m.reply(doaText)
+				} catch (e) {
+					console.error(e)
+					m.reply('Terjadi kesalahan saat mengambil data Doa.')
+				}
+			}
+			break
+			case 'imsakiyah': case 'imsakiyahkota': {
+				if (!text) return m.reply(`Contoh: ${prefix + command} jakarta\nAtau melihat hari tertentu: ${prefix + command} jakarta | 5`)
+				try {
+					m.react('⏳')
+					let [query, dayStr] = text.split('|').map(x => x.trim())
+					
+					const imsakiyahMap = require('./lib/imsakiyah_map.json')
+					const cleanQuery = query.toLowerCase().replace(/[^a-z0-9]/g, '')
+					
+					let match = imsakiyahMap[cleanQuery]
+					if (!match) {
+						// Search for partial matches in keys
+						const keys = Object.keys(imsakiyahMap)
+						const foundKeys = keys.filter(k => k.includes(cleanQuery))
+						if (foundKeys.length > 0) {
+							// Use first match
+							match = imsakiyahMap[foundKeys[0]]
+						}
+					}
+					
+					if (!match) return m.reply(`Kabupaten/Kota *${query}* tidak ditemukan. Pastikan ejaan benar.`)
+					
+					const res = await fetch('https://equran.id/api/v2/imsakiyah', {
+						method: 'POST',
+						headers: { 'Content-Type': 'application/json' },
+						body: JSON.stringify({ provinsi: match.provinsi, kabkota: match.kabkota })
+					}).then(r => r.json())
+					
+					if (res.code !== 200 || !res.data) return m.reply('Gagal mengambil jadwal imsakiyah.')
+					
+					const data = res.data
+					let filterDay = dayStr ? parseInt(dayStr) : null
+					
+					let txt = `╭──❍「 *IMSAKIYAH ${data.kabkota.toUpperCase()}* 」❍\n`
+					txt += `├ *Provinsi* : ${data.provinsi}\n`
+					txt += `├ *Tahun* : ${data.hijriah} H / ${data.masehi} M\n`
+					if (filterDay) {
+						txt += `├ *Menampilkan* : Ramadhan Hari Ke-${filterDay}\n`
+					} else {
+						txt += `├ *Petunjuk* : Gunakan *${prefix + command} ${query} | <hari>* untuk melihat hari tertentu saja.\n`
+					}
+					txt += `╰──────❍\n\n`
+					
+					if (filterDay) {
+						const d = data.imsakiyah.find(i => i.tanggal === filterDay)
+						if (!d) return m.reply(`Hari Ke-${filterDay} tidak ditemukan (Hanya 1-30).`)
+						txt += `*RAMADHAN HARI KE-${d.tanggal}*\n`
+						txt += `├ *Imsak* : ${d.imsak}\n`
+						txt += `├ *Subuh* : ${d.subuh}\n`
+						txt += `├ *Terbit* : ${d.terbit}\n`
+						txt += `├ *Dhuha* : ${d.dhuha}\n`
+						txt += `├ *Dzuhur* : ${d.dzuhur}\n`
+						txt += `├ *Ashar* : ${d.ashar}\n`
+						txt += `├ *Maghrib* : ${d.maghrib}\n`
+						txt += `├ *Isya* : ${d.isya}\n`
+						txt += `╰──────❍`
+					} else {
+						txt += `*JADWAL LENGKAP RAMADHAN:*\n`
+						txt += `Tgl | Imsak | Subuh | Dzuhur | Ashar | Maghrib | Isya\n`
+						data.imsakiyah.forEach(d => {
+							txt += `*${d.tanggal}.* ${d.imsak} | ${d.subuh} | ${d.dzuhur} | ${d.ashar} | ${d.maghrib} | ${d.isya}\n`
+						})
+					}
+					
+					m.reply(txt)
+				} catch (e) {
+					console.error(e)
+					m.reply('Terjadi kesalahan saat mengambil data Imsakiyah.')
+				}
+			}
+			break
 			
 			// Ai Menu
 			case 'ai': case 'google': case 'bard': case 'gemini': {
@@ -4748,6 +5059,11 @@ Select Bot Settings:
 ╰─┬────❍
 ╭─┴❍「 *ISLAM* 」❍
 │${setv} ${prefix}jadwalshalat (nama kota)
+│${setv} ${prefix}alquran (nama/no surat)
+│${setv} ${prefix}surat (nama/no surat)
+│${setv} ${prefix}tafsir (nama/no surat)
+│${setv} ${prefix}doa (nama/id doa)
+│${setv} ${prefix}imsakiyahkota (nama kota)
 ╰─┬────❍
 ╭─┴❍「 *TOOLS* 」❍
 │${setv} ${prefix}get (url) 🔸️
@@ -5079,6 +5395,11 @@ Select Bot Settings:
 				m.reply(`
 ╭──❍「 *ISLAM* 」❍
 │${setv} ${prefix}jadwalshalat (nama kota)
+│${setv} ${prefix}alquran (nama/no surat)
+│${setv} ${prefix}surat (nama/no surat)
+│${setv} ${prefix}tafsir (nama/no surat)
+│${setv} ${prefix}doa (nama/id doa)
+│${setv} ${prefix}imsakiyahkota (nama kota)
 ╰──────❍`)
 			}
 			break
