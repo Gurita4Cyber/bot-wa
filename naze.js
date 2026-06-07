@@ -192,7 +192,18 @@ const naze = async (naze, m, msg, store) => {
 		const isVip = isCreator || (db.users[m.sender] ? db.users[m.sender].vip : false)
 		const isBan = isCreator || (db.users[m.sender] ? db.users[m.sender].ban : false)
 		const isLimit = isCreator || (db.users[m.sender] ? (db.users[m.sender].limit > 0) : false)
-		const isPremium = isCreator || checkStatus(m.sender, premium) || false
+		const getPremiumEntry = (senderJid) => {
+			return premium.find(p => {
+				const pJid = p.id;
+				if (pJid === senderJid) return true;
+				const resolvedJid = naze.findJidByLid(jidNormalizedUser(pJid), store, true);
+				if (resolvedJid === senderJid) return true;
+				const reversedJid = naze.findJidByLid(jidNormalizedUser(senderJid), store, true);
+				if (reversedJid === pJid) return true;
+				return false;
+			});
+		};
+		const isPremium = isCreator || !!getPremiumEntry(m.sender) || false;
 		const isNsfw = m.isGroup ? db.groups[m.chat].nsfw : false
 		
 		// Fake
@@ -2012,7 +2023,8 @@ const naze = async (naze, m, msg, store) => {
 			case 'profile': case 'cek': {
 				const user = Object.keys(db.users)
 				const infoUser = db.users[m.sender]
-				await m.reply(`*👤Profile @${m.sender.split('@')[0]} :*\n🐋User Bot : ${user.includes(m.sender) ? 'True' : 'False'}\n🔥User : ${isVip ? 'VIP' : isPremium ? 'PREMIUM' : 'FREE'}${isPremium ? `\n⏳Expired : ${checkStatus(m.sender, premium) ? formatDate(getExpired(m.sender, db.premium)) : '-'}` : ''}\n🎫Limit : ${infoUser.limit}\n💰Uang : ${infoUser ? infoUser.money.toLocaleString('id-ID') : '0'}`)
+				const premEntry = getPremiumEntry(m.sender);
+				await m.reply(`*👤Profile @${m.sender.split('@')[0]} :*\n🐋User Bot : ${user.includes(m.sender) ? 'True' : 'False'}\n🔥User : ${isVip ? 'VIP' : isPremium ? 'PREMIUM' : 'FREE'}${isPremium ? `\n⏳Expired : ${premEntry ? formatDate(premEntry.expired) : '-'}` : ''}\n🎫Limit : ${infoUser.limit}\n💰Uang : ${infoUser ? infoUser.money.toLocaleString('id-ID') : '0'}`)
 			}
 			break
 			case 'leaderboard': {
