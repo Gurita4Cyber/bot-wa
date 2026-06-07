@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Документация API</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f9;
+            color: #333;
+        }
+        header {
+            background-color: #333;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        h1 {
+            margin: 0;
+        }
+        .content {
+            max-width: 900px;
+            margin: 20px auto;
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+        h2 {
+            color: #333;
+        }
+        pre {
+            background-color: #f4f4f4;
+            padding: 10px;
+            border-radius: 5px;
+            overflow-x: auto;
+            font-family: 'Courier New', Courier, monospace;
+            border: 1px solid #ddd;
+        }
+        .note {
+            background-color: #ffecb3;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .example {
+            background-color: #e9f7f7;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .parameters-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 20px;
+        }
+        .parameters-table th, .parameters-table td {
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            text-align: left;
+        }
+        .parameters-table th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Документация API</h1>
+</header>
+
+<div class="content">
+    <h2>Mendapatkan Data Melalui API</h2>
+    <p>Anda dapat menerima data secara otomatis menggunakan API. Untuk melakukan ini, Anda perlu menulis perintah /API di bot dan mendapatkan token pribadi Anda. Awalnya, ia akan memiliki 100 permintaan gratis yang akan memungkinkan pengujian sistem. Ketika mereka berakhir, uang akan mulai menghabiskan uang dari saldo Anda.</p>
+
+    <p>Harga permintaan tergantung pada jenis permintaan dan pada batas pencarian yang ditentukan. Secara default, batasnya adalah 100, dengan batas seperti itu, sebagian besar permintaan akan menelan biaya 0,003 $.</p>
+
+    <p>Formula perhitungan harga dalam dolar adalah sebagai berikut:</p>
+    <pre><code>0.0002 * (5 + sqrt(Limit * Complexity))</code></pre>
+    <ul>
+        <li>Batas adalah batas pencarian yang Anda tentukan (misalnya, 100).</li>
+        <li>Kompleksitas adalah parameter yang mencerminkan jumlah pencarian tunggal yang harus dilakukan untuk permintaan Anda.</li>
+    </ul>
+
+    <p>Jika permintaan terdiri dari beberapa kata, maka mereka mencari semua kemungkinan penataan ulang, dan oleh karena itu kompleksitas tergantung pada jumlah kata dalam permintaan Anda. Berikut adalah contoh kompleksitas menghitung:</p>
+
+    <ul>
+        <li>1 kata: Complexity = 1</li>
+        <li>2 kata: Complexity = 5</li>
+        <li>3 kata: Complexity = 16</li>
+        <li>Lebih dari 3 kata: Complexity = 40</li>
+    </ul>
+
+    <p>Selain itu, elemen -elemen berikut tidak dianggap sebagai kata -kata:</p>
+    <ul>
+        <li>Tanggal</li>
+        <li>Garis lebih pendek dari 4 karakter</li>
+        <li>Angka lebih pendek dari 6 karakter</li>
+    </ul>
+
+    <p>Jika Anda tidak ingin membagi kueri menjadi kata berdasarkan spasi, gunakan tanda kutip ganda. Frasa dalam tanda kutip ganda diperlakukan sebagai satu kata.</p>
+    <div class="note">
+        <strong>Catatan:</strong> Batasan frekuensi permintaan dari satu IP adalah 3 permintaan per detik. Jika Anda perlu menjalankan lebih banyak kueri, Anda dapat menggabungkan beberapa kueri menjadi satu atau membuat kunci terpisah di tab /app.
+    </div>
+
+    <h2>Parameter permintaan</h2>
+    <table class="parameters-table">
+        <thead>
+            <tr>
+                <th>Parameter</th>
+                <th>Keterangan</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td><strong>'token'</strong></td>
+                <td>Token yang Anda terima setelah menjalankan perintah <code>/api</code>.</td>
+            </tr>
+            <tr>
+                <td><strong>'request'</strong></td>
+                <td>Baris dengan permintaan Anda atau array baris dengan beberapa permintaan.</td>
+            </tr>
+            <tr>
+                <td><strong>'limit'</strong></td>
+                <td>Batas pencarian (default 100). Jumlahnya dari 100 hingga 10.000. Ini menentukan jumlah hasil yang dikembalikan dan rentang pencarian dalam database.</td>
+            </tr>
+            <tr>
+                <td><strong>'lang'</strong></td>
+                <td>Kode bahasa yang akan ada hasil permintaan (secara default <code> en </code>).</td>
+            </tr>
+            <tr>
+                <td><strong>'type'</strong></td>
+                <td>Jenis Pelaporan: <code>json</code>, <code>short</code>, <code>html</code> (Secara default <code>json</code>).</td>
+            </tr>
+            <tr>
+                <td><strong>'bot_name'</strong></td>
+                <td>Nama bot dalam format <code> @name </sode> (perlu untuk menunjukkan apakah bot tidak berlaku untuk grup utama cermin).</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <h2>Contoh permintaan</h2>
+    <div class="example">
+        <p><strong>Contoh 1:</strong></p>
+        <pre>
+{"token":"987654321:b42vAQjW", "request":"google"}
+        </pre>
+    </div>
+    <div class="example">
+        <p><strong>Contoh 2:</strong></p>
+        <pre>
+{"token":"987654321:b42vAQjW", "request":"Petya Ivanov ", "lang": "ru"}
+        </pre>
+    </div>
+    <div class="example">
+        <p><strong>Contoh 3:</strong></p>
+        <pre>
+{"token":"987654321:b42vAQjW", "request":"example@gmail.com", "limit": 300}
+        </pre>
+    </div>
+    <div class="example">
+        <p><strong>Contoh 4:</strong></p>
+        <pre>
+{"token":"987654321:b42vAQjW", "request":"Elon Reeve Musk", "limit": 100, "lang":"ru"}
+        </pre>
+    </div>
+    <div class="example">
+        <p><strong>Contoh 5:</strong></p>
+        <pre>
+{"token":"987654321:b42vAQjW", "request":"example@gmail.com\nElon Reeve Musk"}
+        </pre>
+    </div>
+    <div class="example">
+        <p><strong>Contoh 6:</strong></p>
+        <pre>
+{"token":"987654321:b42vAQjW", "request":["example@gmail.com","Elon Reeve Musk"]}
+        </pre>
+    </div>
+
+    <h2>Пример кода (Python)</h2>
+    <div class="example">
+        <p>Пример использования API на языке Python:</p>
+        <pre>
+import requests
+
+data = {"token":"987654321:Vg41g0qY", "request":"test request", "limit": 100, "lang":"ru"}
+url = 'https://leakosintapi.com/'
+response = requests.post(url, json=data)
+print(response.json())
+        </pre>
+    </div>
+
+    <p><strong>Harap dicatat:</strong> Data kueri dikirim dalam format JSON. Jika Anda mengirimkan bentuk parameter permintaan, Anda akan mendapatkan kesalahan 501.</p>
+
+    <div class="example">
+        <p>Contoh pertarungan telegram berdasarkan API:</p>
+        <pre>
+import requests
+from random import randint
+try:
+    import telebot
+    from telebot.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+except ModuleNotFoundError:
+    input("Tidak ada perpustakaan yang diperlukan. Lengkapi Perintah Baris Perintah: Pip Instal Pytelegrambotapi")
+
+url = "https://leakosintapi.com/"
+bot_token = "" #Masukkan ke sini token yang diterima dari @botfather
+api_token = ""  #Masukkan ke sini token yang diterima dari leakosint
+lang = "ru"
+limit = 300
+
+#Dalam fungsi ini, Anda dapat memeriksa apakah pengguna memiliki akses ke
+def user_access_test(user_id):
+    return(True)
+
+#Fungsi untuk menghasilkan laporan
+cash_reports = {}
+def generate_report(query, query_id):
+    global cash_reports, url, bot_token, api_token, limit, lang
+    data =  {"token":api_token, "request":query.split("\n")[0], "limit": limit, "lang":lang}
+    response = requests.post(url, json=data).json()
+    print(response)
+    if "Error code" in response:
+        print("Kesalahan:"+response["Error code"])
+        return(None)
+    cash_reports[str(query_id)] = []
+    for database_name in response["List"].keys():
+        text = [f"&lt;b&gt;{database_name}&lt;/b&gt;",""]
+        text.append(response["List"][database_name]["InfoLeak"]+"\n")
+        if database_name!="No results found":
+            for report_data in response["List"][database_name]["Data"]:
+                for column_name in report_data.keys():
+                    text.append(f"&lt;b&gt;{column_name}&lt;/b&gt;:  {report_data[column_name]}")
+                text.append("")
+        text = "\n".join(text)
+        if len(text)>3500:
+            text = text[:3500]+text[3500:].split("\n")[0]+"\n\nBeberapa data tidak sesuai dengan pesan ini"
+        cash_reports[str(query_id)].append(text)
+    return(cash_reports[str(query_id)])
+
+#Fungsi untuk membuat keyboard inline
+def create_inline_keyboard(query_id, page_id, count_page):
+    markup = InlineKeyboardMarkup()
+    if page_id<0:
+        page_id=count_page
+    elif page_id>count_page-1:
+        page_id=page_id%count_page
+    if count_page==1:
+        return markup
+    markup.row_width = 3
+    markup.add(InlineKeyboardButton(text = "<<", callback_data=f"/page {query_id} {page_id-1}"),
+               InlineKeyboardButton(text = f"{page_id+1}/{count_page}", callback_data="page_list"),
+               InlineKeyboardButton(text = ">>", callback_data=f"/page {query_id} {page_id+1}"))
+    return markup
+
+bot = telebot.TeleBot(bot_token)
+@bot.message_handler(commands=["start"])
+def send_welcome(message):
+    bot.reply_to(message, "Halo! Saya seorang telegram-boot yang dapat mencari database.", parse_mode="Markdown")
+
+@bot.message_handler(func=lambda message: True)
+def echo_message(message):
+    user_id = message.from_user.id
+    if not(user_access_test(user_id)):
+        bot.send_message(message.chat.id, "Anda tidak memiliki akses ke bot")
+        return()
+    if message.content_type == "text":
+        query_id = randint(0,9999999)
+        report = generate_report(message.text,query_id)
+        markup = create_inline_keyboard(query_id,0,len(report))
+        if report==None:
+            bot.reply_to(message, "Bot tidak berfungsi saat ini.", parse_mode="Markdown")
+        try:
+            bot.send_message(message.chat.id, report[0], parse_mode="html", reply_markup=markup) #, reply_markup=markup
+        except telebot.apihelper.ApiTelegramException:
+            bot.send_message(message.chat.id, text = report[0].replace("&lt;b&gt;","").replace("&lt;/b&gt;",""), reply_markup=markup)
+        
+@bot.callback_query_handler(func=lambda call: True)
+def callback_query(call: CallbackQuery):
+    global cash_reports
+    if call.data.startswith("/page "):
+        query_id, page_id = call.data.split(" ")[1:]
+        if not(query_id in cash_reports):
+            bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text="Hasil permintaan telah dihapus")
+        else:
+            report = cash_reports[query_id]
+            markup = create_inline_keyboard(query_id,int(page_id),len(report))
+            try:
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=report[int(page_id)], parse_mode="html", reply_markup=markup)
+            except telebot.apihelper.ApiTelegramException:
+                bot.edit_message_text(chat_id=call.message.chat.id, message_id=call.message.message_id, text=report[int(page_id)].replace("&lt;b&gt;","").replace("&lt;/b&gt;",""), reply_markup=markup)
+while True:
+    try:
+        bot.polling()
+    except:
+        pass
+        </pre>
+    </div>
+
+</div>
+
+</body>
+</html>
