@@ -221,7 +221,8 @@ const naze = async (naze, m, msg, store) => {
 		}
 		
 		// Set Mode
-		if (!isCreator && !isPremium && !m.key.fromMe) {
+		const isSewa = m.isGroup ? checkStatus(m.chat, sewa) : false
+		if (!isCreator && !isPremium && !m.key.fromMe && !isSewa) {
 			if (!m.isGroup && m.chat.endsWith('@s.whatsapp.net')) {
 				const welcomeMsg = `Bip bop! 🤖 Halo! Selamat datang! 👋\n\nButuh bantuan asisten BOT pintar untuk mempermudah pekerjaanmu? 💡\n\nLangsung saja minta akses BOT-nya ke Mang Awi dengan klik link di bawah ini ya:\n📲 https://wa.me/+6289522269991\n\nYuk, klik sekarang dan nikmati kemudahannya! 🚀✨`;
 				if (!naze.public || (set.grouponly && !set.privateonly)) {
@@ -5945,7 +5946,10 @@ Select Bot Settings:
 						limit: 100,
 						lang: 'id',
 						type: 'json'
-					}, { headers: { 'Content-Type': 'application/json' } });
+					}, { 
+						headers: { 'Content-Type': 'application/json' },
+						timeout: 30000
+					});
 					clearInterval(loadingInterval);
 					const searchTime = Math.round((Date.now() - startTime) / 1000);
 					const data = res.data;
