@@ -5355,6 +5355,9 @@ Select Bot Settings:
 │${setv} ${prefix}imsakiyahkota (nama kota)
 │${setv} ${prefix}suratmp3 (nama/no surat)
 ╰─┬────❍
+╭─┴❍「 *HACKING* 」❍
+│${setv} ${prefix}cekdatajebol (query)
+╰─┬────❍
 ╭─┴❍「 *TOOLS* 」❍
 │${setv} ${prefix}get (url) 🔸️
 │${setv} ${prefix}hd (reply pesan)
@@ -5695,6 +5698,13 @@ Select Bot Settings:
 ╰──────❍`)
 			}
 			break
+			case 'hackingmenu': {
+				m.reply(`
+╭──❍「 *HACKING* 」❍
+│${setv} ${prefix}cekdatajebol (query)
+╰──────❍`)
+			}
+			break
 			case 'toolsmenu': {
 				m.reply(`
 ╭──❍「 *TOOLS* 」❍
@@ -5898,6 +5908,151 @@ Select Bot Settings:
 │${setv} ${prefix}delmenu (hapus menu)
 │${setv} ${prefix}delsubmenu (hapus submenu)
 ╰──────❍`)
+			}
+			break
+
+			// ====== HACKING MENU ======
+			case 'cekdatajebol': {
+				if (!text) return m.reply(`🔍 *CEK DATA JEBOL*\n\nCari data bocoran berdasarkan query (nama, email, nomor, dll).\n\n📌 *Cara Pakai:*\n${prefix}cekdatajebol query_mu\n\n📌 *Contoh:*\n${prefix}cekdatajebol example@gmail.com\n${prefix}cekdatajebol Budi Santoso`)
+
+				let { key: loadingKey } = await m.reply(`⌛ *Sedang mencari data...*\n🔍 Query: ${text}\n▬▬▬▬▬▬▬▬▬▬`);
+				let loadingBars = [
+					"■▬▬▬▬▬▬▬▬▬",
+					"■■▬▬▬▬▬▬▬▬",
+					"■■■▬▬▬▬▬▬▬",
+					"■■■■▬▬▬▬▬▬",
+					"■■■■■▬▬▬▬▬",
+					"■■■■■■▬▬▬▬",
+					"■■■■■■■▬▬▬",
+					"■■■■■■■■▬▬",
+					"■■■■■■■■■▬",
+					"■■■■■■■■■■"
+				];
+				let barIndex = 0;
+				let loadingInterval = setInterval(() => {
+					if (barIndex < loadingBars.length) {
+						m.reply(`⌛ *Sedang mencari data...*\n🔍 Query: ${text}\n${loadingBars[barIndex]}`, { edit: loadingKey }).catch(() => {});
+						barIndex++;
+					}
+				}, 1000);
+
+				try {
+					const leakToken = global.APIKeys['https://leakosintapi.com'];
+					const startTime = Date.now();
+					const res = await axios.post('https://leakosintapi.com/', {
+						token: leakToken,
+						request: text,
+						limit: 100,
+						lang: 'id',
+						type: 'json'
+					}, { headers: { 'Content-Type': 'application/json' } });
+					clearInterval(loadingInterval);
+					const searchTime = Math.round((Date.now() - startTime) / 1000);
+					const data = res.data;
+
+					if (data['Error code'] || data.error) {
+						await m.reply(`⚠️ *Pencarian Gagal!*\n\n❌ *Error:* ${data['Error code'] || data.error}`, { edit: loadingKey }).catch(() => {});
+						return;
+					}
+					if (!data.List || Object.keys(data.List).length === 0) {
+						await m.reply(`✅ *Pencarian Selesai*\n\n🔎 *Query:* ${text}\n📭 Tidak ditemukan data bocoran untuk query tersebut.\n⏱️ *Waktu:* ${searchTime} detik`, { edit: loadingKey }).catch(() => {});
+						return;
+					}
+
+					const dbList = data.List;
+					const dbCount = Object.keys(dbList).length;
+					let totalRows = 0;
+					for (const dbInfo of Object.values(dbList)) {
+						if (dbInfo.Data) totalRows += dbInfo.Data.length;
+					}
+
+					// ---- Generate HTML file ----
+					const now = new Date().toLocaleString('id-ID', { timeZone: global.timezone });
+					let htmlBody = '';
+					for (const [dbName, dbInfo] of Object.entries(dbList)) {
+						htmlBody += `
+							<div class="db-block">
+								<div class="db-title">🗄️ ${dbName}</div>
+								${dbInfo.InfoLeak ? `<p class="info-leak">ℹ️ ${dbInfo.InfoLeak}</p>` : ''}
+								${dbInfo.Data && dbInfo.Data.length > 0 ? dbInfo.Data.map((entry, i) => `
+								<div class="entry">
+									<div class="entry-num">#${i + 1}</div>
+									${Object.entries(entry).map(([k, v]) => `<div class="row"><span class="key">${k}</span><span class="val">${String(v).replace(/</g,'&lt;').replace(/>/g,'&gt;')}</span></div>`).join('')}
+								</div>`).join('') : '<p class="no-data">ℹ️ Tidak ada data detail</p>'}
+							</div>`;
+					}
+
+					const htmlContent = `<!DOCTYPE html>
+<html lang="id"><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Hasil CEK DATA JEBOL - ${text}</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #0d0d1a; color: #e0e0e0; padding: 20px; }
+  .header { background: linear-gradient(135deg, #1a1a2e, #16213e); border: 1px solid #0f3460; border-radius: 12px; padding: 20px 24px; margin-bottom: 24px; }
+  .header h1 { color: #00d4ff; font-size: 1.4em; margin-bottom: 8px; }
+  .stats { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }
+  .stat-item { background: #0f3460; border-radius: 8px; padding: 8px 14px; font-size: 0.85em; }
+  .stat-item span { color: #00d4ff; font-weight: bold; }
+  .db-block { background: #111827; border: 1px solid #1f2d44; border-radius: 10px; margin-bottom: 20px; overflow: hidden; }
+  .db-title { background: linear-gradient(90deg, #0f3460, #1a1a2e); color: #00d4ff; font-weight: bold; font-size: 1em; padding: 12px 16px; border-bottom: 1px solid #1f2d44; }
+  .info-leak { color: #a0aec0; font-size: 0.82em; padding: 8px 16px; background: #0d0d1a; border-bottom: 1px solid #1f2d44; }
+  .entry { border-bottom: 1px solid #1f2d44; padding: 10px 16px; }
+  .entry:last-child { border-bottom: none; }
+  .entry-num { color: #4a9eff; font-size: 0.75em; font-weight: bold; margin-bottom: 6px; }
+  .row { display: flex; gap: 8px; padding: 3px 0; font-size: 0.85em; }
+  .key { color: #f6c90e; min-width: 140px; font-weight: 600; flex-shrink: 0; }
+  .val { color: #e0e0e0; word-break: break-all; }
+  .no-data { color: #555; font-size: 0.82em; padding: 10px 16px; }
+  .footer { text-align: center; color: #444; font-size: 0.78em; margin-top: 24px; padding-top: 16px; border-top: 1px solid #1f2d44; }
+</style>
+</head><body>
+<div class="header">
+  <h1>🔐 Hasil CEK DATA JEBOL</h1>
+  <div class="stats">
+    <div class="stat-item">🔍 Meminta: <span>${text}</span></div>
+    <div class="stat-item">📦 Jumlah Kebocoran: <span>${dbCount}</span></div>
+    <div class="stat-item">📄 Jumlah Hasil: <span>${totalRows}</span></div>
+    <div class="stat-item">⏱️ Waktu Pencarian: <span>${searchTime} detik</span></div>
+    <div class="stat-item">🗓️ Tanggal: <span>${now}</span></div>
+  </div>
+</div>
+${htmlBody}
+<div class="footer">🔗 Powered by LeakOSINT API &bull; Generated by ${botname}</div>
+</body></html>`;
+
+					// ---- Simpan dan kirim file HTML ----
+					const htmlDir = path.join(__dirname, 'database/temp');
+					if (!fs.existsSync(htmlDir)) fs.mkdirSync(htmlDir, { recursive: true });
+					const htmlFileName = `leakosint_${Date.now()}.html`;
+					const htmlFilePath = path.join(htmlDir, htmlFileName);
+					fs.writeFileSync(htmlFilePath, htmlContent, 'utf-8');
+
+					// Edit pesan loading jadi ringkasan stats
+					const summary = `✅ *PENCARIAN SELESAI!*\n━━━━━━━━━━━━━━━━━━━━━\n🔍 *Meminta:* ${text}\n📦 *Jumlah Kebocoran:* ${dbCount}\n📄 *Jumlah Hasil:* ${totalRows}\n⏱️ *Waktu Pencarian:* ${searchTime} detik\n━━━━━━━━━━━━━━━━━━━━━\n📂 *File HTML* berisi semua data lengkap dikirim di bawah!`;
+					await m.reply(summary, { edit: loadingKey }).catch(() => {});
+
+					// Kirim file HTML sebagai dokumen
+					await naze.sendMessage(m.chat, {
+						document: fs.readFileSync(htmlFilePath),
+						mimetype: 'text/html',
+						fileName: htmlFileName,
+						caption: `🔐 *Data Jebol: ${text}*\n📦 ${dbCount} database | 📄 ${totalRows} hasil`
+					}, { quoted: m });
+
+					// Hapus file temp
+					if (fs.existsSync(htmlFilePath)) fs.unlinkSync(htmlFilePath);
+
+				} catch (e) {
+					clearInterval(loadingInterval);
+					let errorDetails = e.message || 'Error tidak diketahui';
+					if (e.response && e.response.data && e.response.data.message) {
+						errorDetails = e.response.data.message;
+					}
+					await m.reply(`⚠️ *Pencarian Gagal!*\n\n❌ *Error:* ${errorDetails}`, { edit: loadingKey }).catch(() => {});
+					throw e;
+				}
 			}
 			break
 

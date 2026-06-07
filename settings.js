@@ -77,10 +77,12 @@ global.mess = {
 global.APIs = {
 	naze: 'https://api.naze.biz.id',
 	neosantara: 'https://api.neosantara.xyz/v1',
+	leakosint: 'https://leakosintapi.com',
 }
 global.APIKeys = {
 	'https://api.naze.biz.id': 'nz-298327ff62',
 	'https://api.neosantara.xyz/v1': 'API_KEY_NEOSANTARA_AI',
+	'https://leakosintapi.com': '8369555990:AuMFhZJ4',
 }
 
 global.qwen = {
